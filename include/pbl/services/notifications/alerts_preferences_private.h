@@ -149,6 +149,31 @@ NotificationGroupingRange alerts_preferences_get_notification_grouping_range(voi
  */
 void alerts_preferences_set_notification_grouping_range(NotificationGroupingRange range);
 
+/** @brief What holding Select does on an open notification. */
+typedef enum {
+  /** Dismiss all notifications (default). */
+  NotificationHoldSelectAction_DismissAll = 0,
+  /** Dismiss only the open notification. */
+  NotificationHoldSelectAction_DismissIndividual,
+  /** Number of actions. */
+  NotificationHoldSelectActionCount,
+} NotificationHoldSelectAction;
+
+/**
+ * @brief Get what holding Select does on an open notification.
+ *
+ * @return Hold Select action; NotificationHoldSelectAction_DismissAll if the stored value is
+ * invalid.
+ */
+NotificationHoldSelectAction alerts_preferences_get_notification_hold_select_action(void);
+
+/**
+ * @brief Set what holding Select does on an open notification.
+ *
+ * @param action Hold Select action.
+ */
+void alerts_preferences_set_notification_hold_select_action(NotificationHoldSelectAction action);
+
 /** @brief Style of the clock in the notification window status bar. */
 typedef enum {
   /** Regular clock (default). */
