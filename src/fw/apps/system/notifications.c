@@ -290,7 +290,7 @@ static void prv_group_window_select_long(MenuLayer *menu_layer, MenuIndex *cell_
   NotificationGroupWindow *group_window = context;
   if (cell_index->row < group_window->count) {
     notifications_clear(&group_window->notification_ids[cell_index->row]);
-    vibes_short_pulse();
+    notification_window_show_cleared_dialog(NULL);
   }
 }
 
@@ -651,7 +651,7 @@ static void prv_select_long_callback(MenuLayer *menu_layer, MenuIndex *cell_inde
     }
     app_free(ids);
   }
-  vibes_short_pulse();
+  notification_window_show_cleared_dialog(NULL);
 }
 
 static void prv_select_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *data) {

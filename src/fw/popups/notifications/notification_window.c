@@ -269,19 +269,22 @@ static bool prv_can_clear_item(const TimelineItem *item) {
   return item && (item->header.type == TimelineItemTypeNotification);
 }
 
-static void prv_clear_current_notification(NotificationWindowData *window_data) {
+static bool prv_clear_current_notification(NotificationWindowData *window_data) {
   TimelineItem *item = prv_get_current_notification(window_data);
   if (!prv_can_clear_item(item)) {
-    return;
+    return false;
   }
   // The item belongs to the swap layer, which reloads once the removal is handled
   Uuid id = item->header.id;
   notifications_clear(&id);
+  return true;
 }
 
 static void prv_clear_action_cb(ActionMenu *action_menu, const ActionMenuItem *item,
                                 void *context) {
-  prv_clear_current_notification((NotificationWindowData *)item->action_data);
+  if (prv_clear_current_notification((NotificationWindowData *)item->action_data)) {
+    notification_window_show_cleared_dialog(action_menu);
+  }
 }
 
 static int64_t prv_interpolate_moook_peek_animation(int32_t normalized, int64_t from, int64_t to) {
@@ -770,6 +773,23 @@ static void prv_push_muted_dialog(void) {
   simple_dialog_push(simple_dialog, prv_get_window_stack());
 }
 
+void notification_window_show_cleared_dialog(ActionMenu *action_menu) {
+  SimpleDialog *simple_dialog = simple_dialog_create("Notification Cleared");
+  Dialog *dialog = simple_dialog_get_dialog(simple_dialog);
+
+  const char *msg = i18n_get("Cleared", dialog);
+  dialog_set_text(dialog, msg);
+  dialog_set_icon(dialog, RESOURCE_ID_RESULT_SHREDDED_LARGE);
+  dialog_set_timeout(dialog, DIALOG_TIMEOUT_DEFAULT);
+  i18n_free(msg, dialog);
+
+  if (action_menu) {
+    action_menu_set_result_window(action_menu, &dialog->window);
+  } else {
+    simple_dialog_push(simple_dialog, prv_get_window_stack());
+  }
+}
+
 static void prv_mute_notification(const ActionMenuItem *action_menu_item, uint8_t muted_bitfield) {
   NotificationWindowData *window_data = action_menu_item->action_data;
   TimelineItem *item = prv_get_current_notification(window_data);
@@ -1054,7 +1074,9 @@ static bool prv_hold_select_clears(void) {
 
 static void prv_select_long_click_handler(ClickRecognizerRef recognizer, void *data) {
   if (prv_hold_select_clears()) {
-    prv_clear_current_notification(data);
+    if (prv_clear_current_notification(data)) {
+      notification_window_show_cleared_dialog(NULL);
+    }
   } else {
     prv_dismiss_all(data, NULL);
   }
