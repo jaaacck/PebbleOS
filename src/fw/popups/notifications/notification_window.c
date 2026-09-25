@@ -261,6 +261,29 @@ static void prv_dismiss_all_action_cb(ActionMenu *action_menu, const ActionMenuI
   prv_dismiss_all(window_data, action_menu);
 }
 
+/////////////////////
+// Clear
+/////////////////////
+
+static bool prv_can_clear_item(const TimelineItem *item) {
+  return item && (item->header.type == TimelineItemTypeNotification);
+}
+
+static void prv_clear_current_notification(NotificationWindowData *window_data) {
+  TimelineItem *item = prv_get_current_notification(window_data);
+  if (!prv_can_clear_item(item)) {
+    return;
+  }
+  // The item belongs to the swap layer, which reloads once the removal is handled
+  Uuid id = item->header.id;
+  notifications_clear(&id);
+}
+
+static void prv_clear_action_cb(ActionMenu *action_menu, const ActionMenuItem *item,
+                                void *context) {
+  prv_clear_current_notification((NotificationWindowData *)item->action_data);
+}
+
 static int64_t prv_interpolate_moook_peek_animation(int32_t normalized, int64_t from, int64_t to) {
   return interpolate_moook_soft(normalized, from, to, NUM_MOOOK_SOFT_MID_FRAMES);
 }
@@ -879,16 +902,19 @@ static ActionMenuLevel *prv_create_action_menu_for_item(TimelineItem *item,
                                        (notifications_presented_list_count() > 1));
   const bool has_quiet_time_action = true; // Always true
   const bool has_ancs_mute_action = prv_has_mute_action(item);
+  const bool has_clear_action = prv_can_clear_item(item);
 
   uint8_t num_local_actions = 0;
   num_local_actions += (has_snooze_action) ? 1 : 0;
   num_local_actions += (has_dismiss_all_action) ? 1 : 0;
   num_local_actions += (has_quiet_time_action) ? 1 : 0;
   num_local_actions += (has_ancs_mute_action) ? 1 : 0;
+  num_local_actions += (has_clear_action) ? 1 : 0;
 
   uint8_t num_item_specific_actions = num_timeline_actions;
   num_item_specific_actions += (has_snooze_action) ? 1 : 0;
   num_item_specific_actions += (has_ancs_mute_action) ? 1 : 0;
+  num_item_specific_actions += (has_clear_action) ? 1 : 0;
 
   // Create root level
   uint8_t num_actions = num_timeline_actions + num_local_actions;
@@ -898,8 +924,9 @@ static ActionMenuLevel *prv_create_action_menu_for_item(TimelineItem *item,
 
   // Add actions in order
   // [0] Dismiss (if applicable)
-  // [1] Snooze (if applicable)
-  // [2] Other mobile actions
+  // [1] Clear (if applicable)
+  // [2] Snooze (if applicable)
+  // [3] Other mobile actions
   // ... Other mobile actions
   // [n] Other mobile actions
   // [n + 1] ANCS Mute (if applicable)
@@ -907,6 +934,10 @@ static ActionMenuLevel *prv_create_action_menu_for_item(TimelineItem *item,
   // [n + 3] Toggle Quiet Time
   if (dismiss_action) {
     timeline_actions_add_action_to_root_level(dismiss_action, root_level);
+  }
+  if (has_clear_action) {
+    action_menu_level_add_action(root_level, i18n_get("Clear", root_level), prv_clear_action_cb,
+                                 window_data);
   }
   if (has_snooze_action) {
     action_menu_level_add_action(root_level, i18n_get("Snooze", root_level), prv_snooze_reminder_cb,
@@ -1016,8 +1047,17 @@ static void prv_select_single_click_handler(ClickRecognizerRef recognizer, void 
       &config, window_manager_get_window_stack(NOTIFICATION_PRIORITY));
 }
 
+static bool prv_hold_select_clears(void) {
+  return alerts_preferences_get_notification_hold_select_action() ==
+         NotificationHoldSelectAction_Clear;
+}
+
 static void prv_select_long_click_handler(ClickRecognizerRef recognizer, void *data) {
-  prv_dismiss_all(data, NULL);
+  if (prv_hold_select_clears()) {
+    prv_clear_current_notification(data);
+  } else {
+    prv_dismiss_all(data, NULL);
+  }
 }
 
 static void prv_back_button_single_click_handler(ClickRecognizerRef recognizer, void *data) {
@@ -1028,7 +1068,7 @@ static void prv_back_button_single_click_handler(ClickRecognizerRef recognizer, 
 static void prv_click_config_provider(void *data) {
   NotificationWindowData *window_data = data;
   window_single_click_subscribe(BUTTON_ID_SELECT, prv_select_single_click_handler);
-  if (window_data->allow_dismiss_all) {
+  if (window_data->allow_dismiss_all || prv_hold_select_clears()) {
     window_long_click_subscribe(BUTTON_ID_SELECT, 1000, prv_select_long_click_handler, NULL);
   }
   window_set_click_context(BUTTON_ID_SELECT, data);
