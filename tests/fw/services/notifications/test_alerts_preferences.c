@@ -128,3 +128,14 @@ void test_alerts_preferences__window_timeout_keeps_valid_values(void) {
   cl_assert(alerts_preferences_get_notification_window_timeout_ms() ==
             NOTIF_WINDOW_TIMEOUT_INFINITE);
 }
+
+void test_alerts_preferences__phone_clear_action_round_trip(void) {
+  alerts_preferences_init();
+  cl_assert_equal_i(alerts_preferences_get_notification_phone_clear_action(),
+                    NotificationPhoneClearAction_Keep);
+
+  alerts_preferences_set_notification_phone_clear_action(NotificationPhoneClearAction_Remove);
+  alerts_preferences_init();
+  cl_assert_equal_i(alerts_preferences_get_notification_phone_clear_action(),
+                    NotificationPhoneClearAction_Remove);
+}

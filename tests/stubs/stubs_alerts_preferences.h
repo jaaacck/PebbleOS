@@ -37,3 +37,7 @@ NotificationStatusBarStyle PBL_WEAK alerts_preferences_get_notification_status_b
 PreferredContentSize PBL_WEAK alerts_preferences_get_notification_content_size(void) {
   return NotificationContentSizeSystem;
 }
+
+NotificationPhoneClearAction PBL_WEAK alerts_preferences_get_notification_phone_clear_action(void) {
+  return NotificationPhoneClearAction_Keep;
+}
