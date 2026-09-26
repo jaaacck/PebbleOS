@@ -11,6 +11,7 @@
 #include "pbl/services/evented_timer.h"
 #include "pbl/services/regular_timer.h"
 #include "pbl/services/notifications/ancs/ancs_notifications.h"
+#include "pbl/services/notifications/alerts_preferences_private.h"
 #include "pbl/util/size.h"
 
 #include "clar.h"
@@ -64,6 +65,11 @@ PebblePhoneCaller *phone_call_util_create_caller(const char *number, const char 
 
 bool shell_prefs_get_language_english(void) {
   return false;
+}
+
+static NotificationPhoneClearAction s_phone_clear_action;
+NotificationPhoneClearAction alerts_preferences_get_notification_phone_clear_action(void) {
+  return s_phone_clear_action;
 }
 
 static bool s_block_event_callback = false;
@@ -303,6 +309,7 @@ enum pbl_bt_errno gatt_client_op_write(pbl_bt_characteristic_t characteristic,
 
 void test_ancs__initialize(void) {
   s_block_event_callback = false;
+  s_phone_clear_action = NotificationPhoneClearAction_Keep;
   regular_timer_init();
   s_num_requested_notif_attributes = 0;
   s_num_requested_app_attributes = 0;
