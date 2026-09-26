@@ -6,6 +6,7 @@
 #include "pbl/util/uuid.h"
 #include "pbl/services/filesystem/pfs.h"
 #include "pbl/services/blob_db/notif_db.h"
+#include "pbl/services/notifications/alerts_preferences_private.h"
 #include "pbl/services/notifications/notification_storage.h"
 
 // Fixture
@@ -31,10 +32,17 @@
 #include "stubs_sleep.h"
 #include "stubs_task_wdt.h"
 
+static NotificationPhoneClearAction s_phone_clear_action;
+NotificationPhoneClearAction alerts_preferences_get_notification_phone_clear_action(void) {
+  return s_phone_clear_action;
+}
+
 void test_notif_db__initialize(void) {
   fake_spi_flash_init(0, 0x1000000);
   pfs_init(false);
   notification_storage_reset();
+  fake_kernel_services_notifications_reset();
+  s_phone_clear_action = NotificationPhoneClearAction_Keep;
 }
 
 void test_notif_db__cleanup(void) {
@@ -109,4 +117,45 @@ void test_notif_db__flush(void) {
   cl_assert_equal_i(notif_db_get_len((uint8_t *)&hdr1, UUID_SIZE), 0);
   cl_assert_equal_i(notif_db_get_len((uint8_t *)&hdr2, UUID_SIZE), 0);
   cl_assert_equal_i(notif_db_get_len((uint8_t *)&hdr3, UUID_SIZE), 0);
+}
+
+static void prv_insert_then_dismiss_on_phone(SerializedTimelineItemHeader *hdr) {
+  uuid_generate(&hdr->common.id);
+  cl_assert_equal_i(notif_db_insert((uint8_t *)hdr, UUID_SIZE, (uint8_t *)hdr, sizeof(*hdr)), 0);
+  cl_assert(notification_storage_notification_exists(&hdr->common.id));
+
+  // The phone re-sends the notification with the dismissed status when it is cleared there
+  hdr->common.status = TimelineItemStatusDismissed;
+  cl_assert_equal_i(notif_db_insert((uint8_t *)hdr, UUID_SIZE, (uint8_t *)hdr, sizeof(*hdr)), 0);
+}
+
+void test_notif_db__dismissed_on_phone_kept_by_default(void) {
+  SerializedTimelineItemHeader hdr = {};
+  prv_insert_then_dismiss_on_phone(&hdr);
+
+  cl_assert(notification_storage_notification_exists(&hdr.common.id));
+  cl_assert_equal_i(fake_kernel_services_notifications_acted_upon_count(), 1);
+}
+
+void test_notif_db__dismissed_on_phone_removes_from_watch(void) {
+  s_phone_clear_action = NotificationPhoneClearAction_Remove;
+  SerializedTimelineItemHeader hdr = {};
+  prv_insert_then_dismiss_on_phone(&hdr);
+
+  cl_assert(!notification_storage_notification_exists(&hdr.common.id));
+  cl_assert_equal_i(fake_kernel_services_notifications_acted_upon_count(), 0);
+  // Added once, then removed
+  cl_assert_equal_i(fake_kernel_services_notifications_ancs_notifications_count(), 0);
+}
+
+void test_notif_db__other_status_updates_keep_notification(void) {
+  s_phone_clear_action = NotificationPhoneClearAction_Remove;
+  SerializedTimelineItemHeader hdr = {};
+  uuid_generate(&hdr.common.id);
+  cl_assert_equal_i(notif_db_insert((uint8_t *)&hdr, UUID_SIZE, (uint8_t *)&hdr, sizeof(hdr)), 0);
+
+  hdr.common.status = TimelineItemStatusRead;
+  cl_assert_equal_i(notif_db_insert((uint8_t *)&hdr, UUID_SIZE, (uint8_t *)&hdr, sizeof(hdr)), 0);
+  cl_assert(notification_storage_notification_exists(&hdr.common.id));
+  cl_assert_equal_i(fake_kernel_services_notifications_acted_upon_count(), 1);
 }

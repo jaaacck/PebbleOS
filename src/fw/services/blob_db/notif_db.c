@@ -4,6 +4,7 @@
 #include "pbl/services/blob_db/notif_db.h"
 
 #include "kernel/pbl_malloc.h"
+#include "pbl/services/notifications/alerts_preferences_private.h"
 #include "pbl/services/notifications/notification_storage.h"
 #include <pbl/logging/logging.h>
 
@@ -38,9 +39,20 @@ status_t notif_db_insert(const uint8_t *key, int key_len, const uint8_t *val, in
 
   // If the notification already exists, only update the status flags
   if (notification_storage_notification_exists(&notification.header.id)) {
-    notification_storage_set_status(&notification.header.id, notification.header.status);
-    PBL_LOG_INFO("Notification modified: %s", uuid_string);
-    notifications_handle_notification_acted_upon(id);
+    // The phone reports a notification cleared there by marking it dismissed
+    if ((notification.header.status & TimelineItemStatusDismissed) &&
+        (alerts_preferences_get_notification_phone_clear_action() ==
+         NotificationPhoneClearAction_Remove)) {
+      notification_storage_remove(&notification.header.id);
+      PBL_LOG_INFO("Notification cleared on phone: %s", uuid_string);
+      // Takes a copy of the id
+      notifications_handle_notification_removed(id);
+      kernel_free(id);
+    } else {
+      notification_storage_set_status(&notification.header.id, notification.header.status);
+      PBL_LOG_INFO("Notification modified: %s", uuid_string);
+      notifications_handle_notification_acted_upon(id);
+    }
   } else if (!has_status_bits) {
     notification_storage_store(&notification);
     PBL_LOG_INFO("Notification added: %s", uuid_string);
