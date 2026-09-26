@@ -4,6 +4,7 @@
 #include "clar.h"
 
 #include "pbl/services/notifications/alerts_preferences.h"
+#include "pbl/services/notifications/alerts_preferences_private.h"
 #include "pbl/services/notifications/ancs/ancs_notifications.h"
 #include "pbl/services/blob_db/ios_notif_pref_db.h"
 
@@ -44,6 +45,11 @@ bool ancs_filtering_matches_rules(const iOSNotifPrefs *app_notif_prefs, const AN
   return false;
 }
 
+static NotificationPhoneClearAction s_phone_clear_action;
+NotificationPhoneClearAction alerts_preferences_get_notification_phone_clear_action(void) {
+  return s_phone_clear_action;
+}
+
 // Fakes
 ////////////////////////////////////////////////////////////////
 #include "fake_events.h"
@@ -60,6 +66,7 @@ RtcTicks rtc_get_ticks(void) {
 
 void test_ancs_notifications__initialize(void) {
   s_now = 1;
+  s_phone_clear_action = NotificationPhoneClearAction_Keep;
   fake_notification_storage_reset();
   fake_event_init();
 }
@@ -177,4 +184,29 @@ void test_ancs_notifications__handle_phone_call_removed(void) {
   cl_assert_equal_i(event.phone.type, PhoneEventType_Hide);
   cl_assert_equal_i(event.phone.source, PhoneCallSource_ANCS);
   cl_assert_equal_i(event.phone.call_identifier, uid);
+}
+
+void test_ancs_notifications__removed_on_phone_kept_by_default(void) {
+  const uint32_t uid = 7;
+  fake_notification_storage_set_existing_ancs_notification(&(Uuid)UUID_SYSTEM, uid);
+
+  ancs_notifications_handle_notification_removed(uid, ANCSProperty_iOS9);
+  cl_assert_equal_i(fake_notification_storage_get_remove_count(), 0);
+}
+
+void test_ancs_notifications__removed_on_phone_removes_from_watch(void) {
+  const uint32_t uid = 7;
+  s_phone_clear_action = NotificationPhoneClearAction_Remove;
+
+  // Before iOS 9 removals aren't reliable, so they are ignored
+  fake_notification_storage_set_existing_ancs_notification(&(Uuid)UUID_SYSTEM, uid);
+  ancs_notifications_handle_notification_removed(uid, 0);
+  cl_assert_equal_i(fake_notification_storage_get_remove_count(), 0);
+
+  ancs_notifications_handle_notification_removed(uid, ANCSProperty_iOS9);
+  cl_assert_equal_i(fake_notification_storage_get_remove_count(), 1);
+
+  // Unknown UIDs don't remove anything
+  ancs_notifications_handle_notification_removed(uid + 1, ANCSProperty_iOS9);
+  cl_assert_equal_i(fake_notification_storage_get_remove_count(), 1);
 }

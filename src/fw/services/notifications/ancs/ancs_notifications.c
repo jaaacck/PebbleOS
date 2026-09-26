@@ -16,6 +16,7 @@
 #include "pbl/services/blob_db/pin_db.h"
 #include "pbl/services/blob_db/reminder_db.h"
 #include "pbl/services/i18n/i18n.h"
+#include "pbl/services/notifications/alerts_preferences_private.h"
 #include "pbl/services/notifications/notification_storage.h"
 #include "pbl/services/notifications/notifications.h"
 #include "pbl/services/timeline/attribute.h"
@@ -392,9 +393,16 @@ void ancs_notifications_handle_notification_removed(uint32_t ancs_uid, ANCSPrope
 
   if (notification_storage_find_ancs_notification_id(ancs_uid, notification_id)) {
     PBL_LOG_DBG("Notification removed from notification centre: (UID: %" PRIu32 ")", ancs_uid);
-    notification_storage_set_status(notification_id, TimelineItemStatusDismissed);
-
-    notifications_handle_notification_acted_upon(notification_id);
+    if (alerts_preferences_get_notification_phone_clear_action() ==
+        NotificationPhoneClearAction_Remove) {
+      notification_storage_remove(notification_id);
+      // Takes a copy of the id
+      notifications_handle_notification_removed(notification_id);
+      kernel_free(notification_id);
+    } else {
+      notification_storage_set_status(notification_id, TimelineItemStatusDismissed);
+      notifications_handle_notification_acted_upon(notification_id);
+    }
   } else {
     // notification_id is passed into an event if a matching notification was found, so it will
     // be freed by the system later
