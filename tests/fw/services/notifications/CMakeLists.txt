@@ -52,6 +52,30 @@ pbl_clar_test(test_ancs_notifications
     tests/fakes/fake_events.c
 )
 
+pbl_clar_test(test_ancs_reconcile
+  SOURCES
+    fw/services/notifications/ancs/ancs_reconcile.c
+    fw/services/notifications/ancs/ancs_notifications_util.c
+    fw/services/notifications/notification_storage.c
+    fw/kernel/rand.c
+    third_party/tinymt/TinyMT/tinymt/tinymt32.c
+    lib/util/pstring.c
+    lib/util/string_list.c
+    lib/c/time/mktime.c
+    fw/services/clock/time.c
+    fw/services/filesystem/flash_translation.c
+    fw/services/filesystem/pfs.c
+    fw/services/timeline/item.c
+    fw/services/timeline/attributes_actions.c
+    fw/services/timeline/attribute_group.c
+    fw/services/timeline/attribute.c
+    fw/flash_region/flash_region.c
+    fw/flash_region/filesystem_regions.c
+    tests/fakes/fake_rtc.c
+    tests/fakes/fake_spi_flash.c
+  OVERRIDES dummy_board
+)
+
 pbl_clar_test(test_ancs_notifications_util
   SOURCES
     fw/services/notifications/ancs/ancs_notifications_util.c
