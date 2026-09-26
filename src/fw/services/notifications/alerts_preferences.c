@@ -107,6 +107,10 @@ static NotificationHoldSelectAction s_notification_hold_select_action =
 static NotificationStatusBarStyle s_notification_status_bar_style =
     NotificationStatusBarStyle_Default;
 
+#define PREF_KEY_NOTIF_PHONE_CLEAR_ACTION "notifPhoneClearAction"
+static NotificationPhoneClearAction s_notification_phone_clear_action =
+    NotificationPhoneClearAction_Keep;
+
 #define PREF_KEY_NOTIF_TEXT_SIZE  "notifTextSize"
 #define SHELL_PREF_KEY_TEXT_STYLE "textStyle"
 static PreferredContentSize s_notification_content_size = PreferredContentSizeDefault;
@@ -381,6 +385,7 @@ void alerts_preferences_init(void) {
   RESTORE_PREF(PREF_KEY_NOTIF_GROUPING_RANGE, s_notification_grouping_range);
   RESTORE_PREF(PREF_KEY_NOTIF_HOLD_SELECT_ACTION, s_notification_hold_select_action);
   RESTORE_PREF(PREF_KEY_NOTIF_STATUS_BAR_STYLE, s_notification_status_bar_style);
+  RESTORE_PREF(PREF_KEY_NOTIF_PHONE_CLEAR_ACTION, s_notification_phone_clear_action);
   RESTORE_PREF(PREF_KEY_NOTIF_TEXT_SIZE, s_notification_content_size);
   RESTORE_PREF(PREF_KEY_DND_AUTO_DISMISS, s_dnd_auto_dismiss);
 #undef RESTORE_PREF
@@ -502,6 +507,17 @@ NotificationStatusBarStyle alerts_preferences_get_notification_status_bar_style(
 void alerts_preferences_set_notification_status_bar_style(NotificationStatusBarStyle style) {
   s_notification_status_bar_style = style;
   SET_PREF(PREF_KEY_NOTIF_STATUS_BAR_STYLE, s_notification_status_bar_style);
+}
+
+NotificationPhoneClearAction alerts_preferences_get_notification_phone_clear_action(void) {
+  return (s_notification_phone_clear_action < NotificationPhoneClearActionCount)
+             ? s_notification_phone_clear_action
+             : NotificationPhoneClearAction_Keep;
+}
+
+void alerts_preferences_set_notification_phone_clear_action(NotificationPhoneClearAction action) {
+  s_notification_phone_clear_action = action;
+  SET_PREF(PREF_KEY_NOTIF_PHONE_CLEAR_ACTION, s_notification_phone_clear_action);
 }
 
 PreferredContentSize alerts_preferences_get_notification_content_size(void) {
@@ -799,6 +815,7 @@ void alerts_preferences_handle_blob_db_event(PebbleBlobDBEvent *event) {
   RELOAD_IF_MATCH(PREF_KEY_NOTIF_GROUPING_RANGE, s_notification_grouping_range);
   RELOAD_IF_MATCH(PREF_KEY_NOTIF_HOLD_SELECT_ACTION, s_notification_hold_select_action);
   RELOAD_IF_MATCH(PREF_KEY_NOTIF_STATUS_BAR_STYLE, s_notification_status_bar_style);
+  RELOAD_IF_MATCH(PREF_KEY_NOTIF_PHONE_CLEAR_ACTION, s_notification_phone_clear_action);
   RELOAD_IF_MATCH(PREF_KEY_NOTIF_TEXT_SIZE, s_notification_content_size);
   RELOAD_IF_MATCH(PREF_KEY_DND_MOTION_BACKLIGHT, s_dnd_motion_backlight);
   RELOAD_IF_MATCH(PREF_KEY_DND_TOUCH_BACKLIGHT, s_dnd_touch_backlight);

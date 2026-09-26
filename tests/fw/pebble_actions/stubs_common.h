@@ -118,6 +118,11 @@ int alerts_preferences_get_notification_hold_select_action(void) {
   return 0;
 }
 
+// NotificationPhoneClearAction_Keep
+int alerts_preferences_get_notification_phone_clear_action(void) {
+  return 0;
+}
+
 static TimelineItemActionSource s_current_timeline_action_source =
     TimelineItemActionSourceModalNotification;
 

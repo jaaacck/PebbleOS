@@ -39,6 +39,7 @@ enum NotificationsItem {
   NotificationsItemGroupBySender,
   NotificationsItemHoldSelect,
   NotificationsItemStatusBarStyle,
+  NotificationsItemPhoneClear,
   NotificationsItem_Count,
 };
 
@@ -294,6 +295,35 @@ static void prv_status_bar_style_menu_push(SettingsNotificationsData *data) {
                             s_status_bar_style_labels, data);
 }
 
+// Cleared on Phone
+////////////////////////
+
+static const char *s_phone_clear_action_labels[] = {
+  /// Notifications cleared on the phone stay in the watch's notification history
+  [NotificationPhoneClearAction_Keep] = i18n_noop("Keep in History"),
+  /// Notifications cleared on the phone are removed from the watch
+  [NotificationPhoneClearAction_Remove] = i18n_noop("Remove from Watch"),
+};
+
+_Static_assert(ARRAY_LENGTH(s_phone_clear_action_labels) == NotificationPhoneClearActionCount, "");
+
+static void prv_phone_clear_menu_select(OptionMenu *option_menu, int selection, void *context) {
+  alerts_preferences_set_notification_phone_clear_action((NotificationPhoneClearAction)selection);
+  app_window_stack_remove(&option_menu->window, true /* animated */);
+}
+
+static void prv_phone_clear_menu_push(SettingsNotificationsData *data) {
+  const OptionMenuCallbacks callbacks = {
+    .select = prv_phone_clear_menu_select,
+  };
+  /// Title for the setting choosing what happens when the phone clears a notification
+  const char *title = i18n_noop("Cleared on Phone");
+  settings_option_menu_push(title, OptionMenuContentType_SingleLine,
+                            alerts_preferences_get_notification_phone_clear_action(), &callbacks,
+                            ARRAY_LENGTH(s_phone_clear_action_labels), true /* icons_enabled */,
+                            s_phone_clear_action_labels, data);
+}
+
 // Group by Sender
 ////////////////////////
 
@@ -428,6 +458,13 @@ static void prv_draw_row_cb(SettingsCallbacks *context, GContext *ctx, const Lay
       subtitle = s_status_bar_style_labels[prv_status_bar_style_get_selection_index()];
       break;
     }
+    case NotificationsItemPhoneClear: {
+      /// Notification settings item choosing what happens when the phone clears a notification
+      title = i18n_noop("Cleared on Phone");
+      subtitle =
+          s_phone_clear_action_labels[alerts_preferences_get_notification_phone_clear_action()];
+      break;
+    }
     default:
       WTF;
   }
@@ -475,6 +512,9 @@ static void prv_select_click_cb(SettingsCallbacks *context, uint16_t row) {
       break;
     case NotificationsItemStatusBarStyle:
       prv_status_bar_style_menu_push(data);
+      break;
+    case NotificationsItemPhoneClear:
+      prv_phone_clear_menu_push(data);
       break;
     default:
       WTF;

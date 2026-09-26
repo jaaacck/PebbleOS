@@ -76,6 +76,17 @@ NotificationStatusBarStyle alerts_preferences_get_notification_status_bar_style(
 
 void alerts_preferences_set_notification_status_bar_style(NotificationStatusBarStyle style);
 
+typedef enum {
+  NotificationPhoneClearAction_Keep = 0,
+  NotificationPhoneClearAction_Remove,
+  NotificationPhoneClearActionCount,
+} NotificationPhoneClearAction;
+
+//! @return What happens on the watch when the phone clears a notification
+NotificationPhoneClearAction alerts_preferences_get_notification_phone_clear_action(void);
+
+void alerts_preferences_set_notification_phone_clear_action(NotificationPhoneClearAction action);
+
 //! Notification content size preference value that follows the system content size
 #define NotificationContentSizeSystem ((PreferredContentSize)NumPreferredContentSizes)
 

@@ -139,3 +139,14 @@ void test_alerts_preferences__hold_select_action_round_trip(void) {
   cl_assert_equal_i(alerts_preferences_get_notification_hold_select_action(),
                     NotificationHoldSelectAction_Clear);
 }
+
+void test_alerts_preferences__phone_clear_action_round_trip(void) {
+  alerts_preferences_init();
+  cl_assert_equal_i(alerts_preferences_get_notification_phone_clear_action(),
+                    NotificationPhoneClearAction_Keep);
+
+  alerts_preferences_set_notification_phone_clear_action(NotificationPhoneClearAction_Remove);
+  alerts_preferences_init();
+  cl_assert_equal_i(alerts_preferences_get_notification_phone_clear_action(),
+                    NotificationPhoneClearAction_Remove);
+}

@@ -41,3 +41,7 @@ PreferredContentSize PBL_WEAK alerts_preferences_get_notification_content_size(v
 NotificationHoldSelectAction PBL_WEAK alerts_preferences_get_notification_hold_select_action(void) {
   return NotificationHoldSelectAction_DismissAll;
 }
+
+NotificationPhoneClearAction PBL_WEAK alerts_preferences_get_notification_phone_clear_action(void) {
+  return NotificationPhoneClearAction_Keep;
+}
