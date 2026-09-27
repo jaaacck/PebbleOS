@@ -54,6 +54,7 @@ static TimezoneInfo tz = {
 #include "stubs_sleep.h"
 #include "stubs_syscalls.h"
 #include "stubs_task_wdt.h"
+#include "stubs_timeline_prefs.h"
 #include "stubs_window_stack.h"
 
 void ancs_notifications_enable_bulk_action_mode(bool enable) {

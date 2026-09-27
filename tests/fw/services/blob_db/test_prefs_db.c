@@ -34,6 +34,7 @@
 #include "stubs_sleep.h"
 #include "stubs_system_theme.h"
 #include "stubs_task_wdt.h"
+#include "stubs_timeline_event.h"
 #include "stubs_timeline_peek.h"
 #include "stubs_ambient_light.h"
 #include "stubs_activity.h"

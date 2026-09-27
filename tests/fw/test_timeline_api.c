@@ -43,6 +43,7 @@
 #include "stubs_session.h"
 #include "stubs_sleep.h"
 #include "stubs_task_wdt.h"
+#include "stubs_timeline_prefs.h"
 #include "stubs_window_stack.h"
 
 // Fakes

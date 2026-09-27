@@ -71,6 +71,7 @@
 #include "stubs_syscalls.h"
 #include "stubs_system_theme.h"
 #include "stubs_task_wdt.h"
+#include "stubs_timeline_prefs.h"
 #include "stubs_timeline.h"
 #include "stubs_timeline_actions.h"
 #include "stubs_timeline_layout.h"

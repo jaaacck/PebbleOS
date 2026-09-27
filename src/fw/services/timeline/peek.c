@@ -37,7 +37,8 @@ static void prv_put_peek_event(PeekUpdateContext *update, TimelineItemId *item_i
     *item_id_copy = *item_id;
   }
   const bool is_all_day_event_visible =
-      (update->today_has_all_day_event && !update->today_timed_event_passed);
+      (update->today_has_all_day_event &&
+       (!update->today_timed_event_passed || timeline_prefs_get_show_all_day_events()));
   const bool is_first_event = (item_id && uuid_equal(item_id, &update->first_header.common.id));
 
   PebbleEvent event = {
