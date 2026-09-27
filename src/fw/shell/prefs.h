@@ -203,6 +203,10 @@ void shell_prefs_set_language(ShellLanguage language);
 
 uint8_t timeline_prefs_get_settings_opened(void);
 void timeline_prefs_set_settings_opened(uint8_t version);
+//! Whether today's all-day events stay in the upcoming timeline for the whole day, rather than
+//! moving to the past once the day's first timed event has passed
+bool timeline_prefs_get_show_all_day_events(void);
+void timeline_prefs_set_show_all_day_events(bool show);
 void timeline_peek_prefs_set_enabled(bool enabled);
 bool timeline_peek_prefs_get_enabled(void);
 void timeline_peek_prefs_set_before_time(uint16_t before_time_m);

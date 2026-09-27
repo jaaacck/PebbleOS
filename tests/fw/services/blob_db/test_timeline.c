@@ -53,6 +53,12 @@ static TimezoneInfo tz = {
 #include "stubs_task_wdt.h"
 #include "stubs_window_stack.h"
 
+static bool s_show_all_day_events;
+
+bool timeline_prefs_get_show_all_day_events(void) {
+  return s_show_all_day_events;
+}
+
 struct TimelineNode {
   ListNode node;
   int index;
@@ -440,6 +446,7 @@ static TimelineItem s_extra_case_items[] = {
 /////////////////////////
 
 void test_timeline__initialize(void) {
+  s_show_all_day_events = false;
   fake_rtc_init(0, 0);
   // Note: creating a settings file is going to result in one malloc for the FD name
   pin_db_init();
@@ -880,6 +887,72 @@ void test_timeline__all_day_middle_past(void) {
   cl_assert(uuid_equal(&state.pin.header.id, &s_all_day_items[0].header.id));
 
   cl_assert(!iter_next(&iterator));
+}
+
+// With the setting on, today's all-day events stay in the future after the first timed event
+void test_timeline__all_day_future_after_first_event_when_shown_all_day(void) {
+  s_show_all_day_events = true;
+  prv_insert_all_day_items();
+
+  // 1421183640 is 13:14 on Jan 13, 2015
+  // after first timed event of the day but not all of them
+  Iterator iterator = {0};
+  TimelineIterState state = {0};
+  TimelineNode *head = NULL;
+
+  timeline_init(&head);
+  cl_assert_equal_i(
+      timeline_iter_init(&iterator, &state, &head, TimelineIterDirectionFuture, 1421183640), 0);
+  Uuid first_all_day_event = state.pin.header.id;
+  cl_assert(uuid_equal(&state.pin.header.id, &s_all_day_items[1].header.id) ||
+            uuid_equal(&state.pin.header.id, &s_all_day_items[2].header.id));
+  cl_assert(state.node->all_day);
+
+  cl_assert(iter_next(&iterator));
+  cl_assert(uuid_equal(&state.pin.header.id, &s_all_day_items[1].header.id) ||
+            uuid_equal(&state.pin.header.id, &s_all_day_items[2].header.id));
+  cl_assert(!uuid_equal(&first_all_day_event, &state.pin.header.id));
+  cl_assert(state.node->all_day);
+
+  // followed by the timed events still to come
+  cl_assert(iter_next(&iterator));
+  cl_assert(!state.node->all_day);
+}
+
+void test_timeline__all_day_not_past_after_first_event_when_shown_all_day(void) {
+  s_show_all_day_events = true;
+  prv_insert_all_day_items();
+
+  Iterator iterator = {0};
+  TimelineIterState state = {0};
+  TimelineNode *head = NULL;
+
+  timeline_init(&head);
+  cl_assert_equal_i(
+      timeline_iter_init(&iterator, &state, &head, TimelineIterDirectionPast, 1421183640), 0);
+  cl_assert(uuid_equal(&state.pin.header.id, &s_items[4].header.id));
+  cl_assert(iter_next(&iterator));
+  cl_assert(uuid_equal(&state.pin.header.id, &s_items[0].header.id));
+
+  // straight to yesterday's all-day event
+  cl_assert(iter_next(&iterator));
+  cl_assert(uuid_equal(&state.pin.header.id, &s_all_day_items[0].header.id));
+  cl_assert(!iter_next(&iterator));
+}
+
+void test_timeline__all_day_direction_for_item_when_shown_all_day(void) {
+  prv_insert_all_day_items();
+  TimelineNode *head = NULL;
+  timeline_init(&head);
+
+  TimelineItem today = s_all_day_items[1];
+  today.header.timestamp = 1421136000; // local midnight, as read back from the pin db
+  cl_assert_equal_i(timeline_direction_for_item(&today, head, 1421183640),
+                    TimelineIterDirectionPast);
+
+  s_show_all_day_events = true;
+  cl_assert_equal_i(timeline_direction_for_item(&today, head, 1421183640),
+                    TimelineIterDirectionFuture);
 }
 
 static void prv_insert_extra_case_items(void) {

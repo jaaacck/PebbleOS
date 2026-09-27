@@ -36,10 +36,12 @@ typedef enum TimelinePeekMenuIndex {
   TimelinePeekMenuIndex_UnsupportedFaces,
 #endif
   TimelinePeekMenuIndex_Timing,
+  //! Not a Quick View setting: shown right after the Quick View toggle when Quick View is off
+  TimelinePeekMenuIndex_AllDayEvents,
 
   TimelinePeekMenuIndexCount,
   TimelinePeekMenuIndexEnabledCount = TimelinePeekMenuIndexCount,
-  TimelinePeekMenuIndexDisabledCount = (TimelinePeekMenuIndex_Toggle + 1),
+  TimelinePeekMenuIndexDisabledCount = (TimelinePeekMenuIndex_Toggle + 2),
 } TimelinePeekMenuIndex;
 
 typedef enum PeekBeforeTimingMenuIndex {
@@ -166,6 +168,13 @@ static void prv_deinit_cb(SettingsCallbacks *context) {
   app_free(context);
 }
 
+static TimelinePeekMenuIndex prv_row_to_index(uint16_t row) {
+  if (!timeline_peek_prefs_get_enabled() && (row == TimelinePeekMenuIndex_Toggle + 1)) {
+    return TimelinePeekMenuIndex_AllDayEvents;
+  }
+  return (TimelinePeekMenuIndex)row;
+}
+
 static uint16_t prv_num_rows_cb(SettingsCallbacks *context) {
   return timeline_peek_prefs_get_enabled() ? TimelinePeekMenuIndexEnabledCount
                                            : TimelinePeekMenuIndexDisabledCount;
@@ -177,7 +186,7 @@ static void prv_draw_row_cb(SettingsCallbacks *context, GContext *ctx, const Lay
   const char *title = NULL;
   const char *subtitle = NULL;
 
-  switch ((TimelinePeekMenuIndex)row) {
+  switch (prv_row_to_index(row)) {
     case TimelinePeekMenuIndex_Toggle:
       /// Shows up in the Timeline settings as a toggle-able "Quick View" item.
       title = i18n_noop("Quick View");
@@ -204,6 +213,20 @@ static void prv_draw_row_cb(SettingsCallbacks *context, GContext *ctx, const Lay
           timeline_peek_prefs_get_unsupported_face_mode())];
       break;
 #endif
+    case TimelinePeekMenuIndex_AllDayEvents:
+      /// Shows up in the Timeline settings as a toggle-able "All-Day Events" item.
+      title = i18n_noop("All-Day Events");
+      subtitle =
+          timeline_prefs_get_show_all_day_events()
+              ?
+              /// Shows up in the Timeline settings under the "All-Day Events" toggle when today's
+              /// all-day events stay in the upcoming timeline for the whole day.
+              i18n_noop("Show All Day")
+              :
+              /// Shows up in the Timeline settings under the "All-Day Events" toggle when today's
+              /// all-day events move to the past once the day's first event has passed.
+              i18n_noop("Until First Event");
+      break;
     case TimelinePeekMenuIndexCount:
       break;
   }
@@ -214,9 +237,12 @@ static void prv_draw_row_cb(SettingsCallbacks *context, GContext *ctx, const Lay
 
 static void prv_select_click_cb(SettingsCallbacks *context, uint16_t row) {
   SettingsTimelinePeekData *data = (SettingsTimelinePeekData *)context;
-  switch ((TimelinePeekMenuIndex)row) {
+  switch (prv_row_to_index(row)) {
     case TimelinePeekMenuIndex_Toggle:
       timeline_peek_prefs_set_enabled(!timeline_peek_prefs_get_enabled());
+      goto done;
+    case TimelinePeekMenuIndex_AllDayEvents:
+      timeline_prefs_set_show_all_day_events(!timeline_prefs_get_show_all_day_events());
       goto done;
     case TimelinePeekMenuIndex_Timing:
       prv_push_before_time_menu(data);
