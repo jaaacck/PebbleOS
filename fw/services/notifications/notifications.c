@@ -4,9 +4,11 @@
 #include <pbl/services/analytics/analytics.h>
 #include <pbl/services/notifications/notification_storage.h>
 #include <pbl/services/notifications/notifications.h>
+#include <pbl/services/notifications/pending_dismissals.h>
 #include <pbl/services/vibes/vibe_intensity.h>
 #include <pbl/util/bitops.h>
 
+#include <applib/event_service_client.h>
 #include <kernel/events.h>
 #include <kernel/pbl_malloc.h>
 
@@ -67,8 +69,22 @@ void notifications_migrate_timezone(const int tz_diff) {
 void notification_storage_init(void);
 void vibe_intensity_init(void);
 
+static void prv_handle_comm_session_event(PebbleEvent *e, void *context) {
+  const PebbleCommSessionEvent *event = &e->bluetooth.comm_session_event;
+  if (event->is_system && event->is_open) {
+    pending_dismissals_send_to_app();
+  }
+}
+
 void notifications_init(void) {
   notification_storage_init();
+  pending_dismissals_init();
+
+  static EventServiceInfo s_comm_session_event_info = {
+    .type = PEBBLE_COMM_SESSION_EVENT,
+    .handler = prv_handle_comm_session_event,
+  };
+  event_service_client_subscribe(&s_comm_session_event_info);
 }
 
 void notifications_add_notification(TimelineItem *notification) {

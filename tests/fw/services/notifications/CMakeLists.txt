@@ -76,6 +76,27 @@ pbl_clar_test(test_ancs_reconcile
   OVERRIDES dummy_board
 )
 
+pbl_clar_test(test_pending_dismissals
+  SOURCES
+    fw/services/notifications/pending_dismissals.c
+    fw/services/notifications/ancs/ancs_notifications_util.c
+    fw/services/settings/settings_file.c
+    fw/services/settings/settings_raw_iter.c
+    fw/services/filesystem/flash_translation.c
+    fw/services/filesystem/pfs.c
+    fw/services/timeline/attribute.c
+    fw/flash_region/flash_region.c
+    fw/flash_region/filesystem_regions.c
+    lib/util/pstring.c
+    fw/kernel/rand.c
+    lib/c/time/mktime.c
+    fw/services/clock/time.c
+    third_party/tinymt/TinyMT/tinymt/tinymt32.c
+    tests/fakes/fake_rtc.c
+    tests/fakes/fake_spi_flash.c
+  OVERRIDES dummy_board
+)
+
 pbl_clar_test(test_ancs_notifications_util
   SOURCES
     fw/services/notifications/ancs/ancs_notifications_util.c
