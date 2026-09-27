@@ -28,6 +28,7 @@
 #endif
 #include "pbl/services/bluetooth/ble_hrm.h"
 #include "pbl/services/settings/settings_file.h"
+#include "pbl/services/timeline/event.h"
 #include "pbl/services/timeline/peek.h"
 #include "kernel/events.h"
 #include "kernel/event_loop.h"
@@ -306,6 +307,9 @@ static HeartRatePreferences s_activity_hr_preferences = ACTIVITY_HEART_RATE_DEFA
 
 #define PREF_KEY_TIMELINE_SETTINGS_OPENED "timelineSettingsOpened"
 static uint8_t s_timeline_settings_opened = 0;
+
+#define PREF_KEY_TIMELINE_SHOW_ALL_DAY_EVENTS "timelineShowAllDayEvents"
+static bool s_timeline_show_all_day_events = false;
 
 #define PREF_KEY_TIMELINE_PEEK_ENABLED "timelineQuickViewEnabled"
 static bool s_timeline_peek_enabled = true;
@@ -818,6 +822,13 @@ static bool prv_set_s_blood_oxygen_activity_enabled(bool *enabled) {
 
 static uint8_t prv_set_s_timeline_settings_opened(uint8_t *version) {
   s_timeline_settings_opened = *version;
+  return true;
+}
+
+static bool prv_set_s_timeline_show_all_day_events(bool *show) {
+  s_timeline_show_all_day_events = *show;
+  // Quick View counts today's all-day events as upcoming while they are shown there
+  timeline_event_refresh();
   return true;
 }
 
@@ -2161,6 +2172,14 @@ void timeline_prefs_set_settings_opened(uint8_t version) {
 
 uint8_t timeline_prefs_get_settings_opened(void) {
   return s_timeline_settings_opened;
+}
+
+void timeline_prefs_set_show_all_day_events(bool show) {
+  prv_pref_set(PREF_KEY_TIMELINE_SHOW_ALL_DAY_EVENTS, &show, sizeof(show));
+}
+
+bool timeline_prefs_get_show_all_day_events(void) {
+  return s_timeline_show_all_day_events;
 }
 
 void timeline_peek_prefs_set_enabled(bool enabled) {
