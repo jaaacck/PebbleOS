@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <time.h>
+
 #include <applib/bluetooth/ble_client.h>
 
 //! @file ancs.h Module implementing an ANCS client.
@@ -73,6 +75,11 @@ void ancs_handle_read_or_notification(pbl_bt_characteristic_t characteristic, co
 //! Destroys the ANCS client.
 //! Must only be called from KernelMain!
 void ancs_destroy(void);
+
+//! @return when the watch subscribed to the current ANCS session, or 0 when it isn't subscribed.
+//! iOS may renumber notifications across sessions, so only the UIDs of notifications received since
+//! then are known to be valid.
+time_t ancs_get_subscribed_since(void);
 
 //! This function is safe to call from any task.
 void ancs_perform_action(uint32_t notification_uid, uint8_t action_id);
