@@ -30,6 +30,7 @@
 #include <kernel/ui/modals/modal_manager.h>
 #include <process_management/app_install_manager.h>
 #include <process_management/app_manager.h>
+#include <shell/prefs.h>
 #include <system/passert.h>
 
 PBL_LOG_MODULE_DEFINE(service_timeline, CONFIG_SERVICE_TIMELINE_LOG_LEVEL);
@@ -118,8 +119,12 @@ static bool prv_show_event(TimelineNode *node, time_t timestamp, time_t midnight
 // All day events show up in future if no timed events have passed today,
 // i.e. no events exist between midnight today and now
 // iterate and figure out if we had a timed event pass today
+// Unless the user chose to keep them in future for the whole day
 static bool prv_should_show_all_day_events(TimelineNode *head, time_t now, time_t today_midnight,
                                            TimelineIterDirection direction) {
+  if (timeline_prefs_get_show_all_day_events()) {
+    return direction == TimelineIterDirectionFuture;
+  }
   TimelineNode *current = head;
   // show in future / hide in past all day events unless we find a timed event
   // between midnight and now

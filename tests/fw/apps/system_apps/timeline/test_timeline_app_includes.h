@@ -73,6 +73,7 @@
 #include <stubs_timeline_layout.h>
 #include <stubs_timeline_layout_animations.h>
 #include <stubs_timeline_peek.h>
+#include <stubs_timeline_prefs.h>
 #include <stubs_timezone_database.h>
 #include <stubs_vibe_score.h>
 #include <stubs_vibe_score_info.h>

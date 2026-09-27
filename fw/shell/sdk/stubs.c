@@ -136,6 +136,11 @@ void shell_prefs_set_language(ShellLanguage language) {
 void language_ui_display_changed(const char *lang_name) {
 }
 
+void timeline_prefs_set_show_all_day_events(bool show) {
+}
+bool timeline_prefs_get_show_all_day_events(void) {
+  return false;
+}
 void timeline_peek_prefs_set_enabled(bool enabled) {
 }
 bool timeline_peek_prefs_get_enabled(void) {

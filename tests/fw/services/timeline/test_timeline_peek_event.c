@@ -45,6 +45,7 @@
 #include <stubs_timeline.h>
 #include <stubs_timeline_peek.h>
 #include <stubs_timeline_pin_window.h>
+#include <stubs_timeline_prefs.h>
 #include <stubs_window_stack.h>
 
 // Fakes

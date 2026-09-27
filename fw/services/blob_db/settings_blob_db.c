@@ -100,6 +100,7 @@ static const char *s_syncable_settings[] = {
   "timelineQuickViewWatchfaceFit",
 #endif
   "timelineSettingsOpened",
+  "timelineShowAllDayEvents",
 
   // Activity preferences
   "activityPreferences",
