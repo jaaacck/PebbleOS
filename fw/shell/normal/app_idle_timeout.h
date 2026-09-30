@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #define APP_IDLE_TIMEOUT_LAUNCHER_MS  (30 * 1000)
@@ -15,6 +16,11 @@ void app_idle_timeout_start(uint32_t timeout_ms);
 
 //! Change the timeout of the running idle timeout and restart it. No-op if it isn't running.
 void app_idle_timeout_set_duration(uint32_t timeout_ms);
+
+//! Suspend the running idle timeout while the app shows something the user reads without pressing
+//! buttons, and restart it when that is dismissed. Unlike pause/resume, this composes with the
+//! focus-driven pause. Dropped if the app exits before it is applied.
+void app_idle_timeout_set_suspended(bool suspended);
 
 //! Stop using the idle timeout for the current app. This is safe to call even if the idle timeout
 //! wasn't running.

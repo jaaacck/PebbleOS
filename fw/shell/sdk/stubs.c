@@ -20,6 +20,9 @@ void app_idle_timeout_start(uint32_t timeout_ms) {
 void app_idle_timeout_refresh(void) {
 }
 
+void app_idle_timeout_set_suspended(bool suspended) {
+}
+
 void app_idle_timeout_stop(void) {
 }
 
