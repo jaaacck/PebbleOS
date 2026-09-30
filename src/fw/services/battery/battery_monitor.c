@@ -172,10 +172,11 @@ void battery_monitor_handle_state_change_event(PreciseBatteryChargeState state) 
   //  Similarly, if the battery voltage has rebounded when the timer expires, the shutdown
   //    will not occur.
 
-#ifdef CONFIG_QEMU
+#if defined(CONFIG_QEMU) && !defined(CONFIG_RECOVERY_FW)
   // QEMU has no real battery, so never enter LPM or standby — otherwise
   // `pebble emu-battery --percent 1` (and any low value) shuts the emulator
-  // down or locks it into the low-power UI.
+  // down or locks it into the low-power UI. PRF, which only tests run on the
+  // emulator, keeps them so they can be tested.
   bool critical = false;
   bool low_power = false;
   s_low_on_first_run = false;
@@ -238,3 +239,10 @@ bool battery_monitor_critical_lockout(void) {
 TimerID battery_monitor_get_standby_timer_id(void) {
   return s_standby_timer_id;
 }
+
+#ifdef CONFIG_SHELL
+#include <pbl/shell/shell.h>
+
+PBL_SHELL_SUBCMD_SET_CREATE(sub_battery);
+PBL_SHELL_CMD_REGISTER(battery, sub_battery, "Battery", NULL);
+#endif

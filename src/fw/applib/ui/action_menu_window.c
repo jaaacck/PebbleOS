@@ -74,8 +74,10 @@ static void prv_view_model_did_change(ActionMenuData *data) {
   GRect frame = grect_inset(data->action_menu.window.layer.frame, vm->menu_insets);
   layer_set_frame(&data->action_menu_layer.layer, &frame);
   prv_set_action_menu_layer_callbacks(data, false);
-  if (cur_level->display_mode == ActionMenuLevelDisplayModeThin) {
+  const bool glyph_grid = (cur_level->display_mode == ActionMenuLevelDisplayModeGlyphGrid);
+  if (glyph_grid || cur_level->display_mode == ActionMenuLevelDisplayModeThin) {
     action_menu_layer_set_items(&data->action_menu_layer, NULL, 0, 0, 0);
+    action_menu_layer_set_glyph_grid(&data->action_menu_layer, glyph_grid);
     action_menu_layer_set_short_items(&data->action_menu_layer, cur_level->items,
                                       cur_level->num_items, cur_level->default_selected_item);
   } else {
@@ -225,6 +227,12 @@ static void prv_click_config_provider(void *context) {
   window_set_click_context(BUTTON_ID_BACK, data);
 }
 
+#ifdef CONFIG_TOUCH
+static bool prv_crumbs_contains_point(const Layer *layer, const GPoint *point) {
+  return false;
+}
+#endif
+
 static void prv_action_window_load(Window *window) {
   ActionMenuData *data = window_get_user_data(window);
   // Init action menu layer
@@ -242,6 +250,10 @@ static void prv_action_window_load(Window *window) {
 #endif
   crumbs_layer_init(&data->crumbs_layer, &frame, data->config.colors.background,
                     data->config.colors.foreground);
+#ifdef CONFIG_TOUCH
+  // The decorative ring must not intercept touches intended for the menu.
+  layer_set_contains_point_override((Layer *)crumbs_layer, prv_crumbs_contains_point);
+#endif
   // Add them to the tree
   layer_add_child(window_get_root_layer(window), (Layer *)action_menu_layer);
   layer_add_child(window_get_root_layer(window), (Layer *)crumbs_layer);

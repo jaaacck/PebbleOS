@@ -342,6 +342,7 @@ void audec_start(AudioDevice *audio_device, AudioTransCB cb) {
 #endif
 
   soc_sf32lb_sleep_block(SOC_SF32LB_DEEPWFI);
+  state->running = true;
 
   prv_allocate_buffers(state);
 
@@ -409,6 +410,10 @@ void audec_stop(AudioDevice *audio_device) {
   AudioDeviceState *state = audio_device->state;
   AUDCODEC_HandleTypeDef *haudcodec = &state->audcodec;
 
+  if (!state->running) {
+    return;
+  }
+
   prv_bf0_disable_pll(state);
 
   HAL_NVIC_DisableIRQ(audio_device->audec_dma_irq);
@@ -425,6 +430,7 @@ void audec_stop(AudioDevice *audio_device) {
   prv_free_buffers(state);
   memset(haudcodec->buf[HAL_AUDCODEC_DAC_CH0], 0, haudcodec->bufSize);
 
+  state->running = false;
   soc_sf32lb_sleep_release(SOC_SF32LB_DEEPWFI);
 }
 
@@ -506,10 +512,8 @@ static void prv_dma_request_processing(AudioDeviceState *state) {
   // A dropped refill is retried on the next half-buffer IRQ; a momentary
   // underrun beats resetting the system over a full queue.
   if (state->trans_cb && !state->callback_pending && free_size >= CFG_AUDIO_PLAYBACK_PIPE_SIZE) {
-    bool system_task_switch_context = false;
     state->callback_pending = true;
-    if (!system_task_add_callback_from_isr_droppable(prv_audio_trans_bg, (void *)state,
-                                                     &system_task_switch_context)) {
+    if (!system_task_add_callback_from_isr_droppable(prv_audio_trans_bg, (void *)state)) {
       state->callback_pending = false;
     }
   }

@@ -10,16 +10,17 @@
 #include "applib/fonts/fonts.h"
 #include "applib/ui/dialogs/dialog.h"
 #include "applib/ui/dialogs/simple_dialog.h"
-#include "console/prompt.h"
 #include "kernel/event_loop.h"
 #include "kernel/pbl_malloc.h"
 #include "kernel/ui/kernel_ui.h"
 #include "kernel/ui/modals/modal_manager.h"
 #include "kernel/util/segment.h"
 #include "kernel/util/task_init.h"
+#include "pbl/kernel/mutex.h"
 #include "pbl/mcu/privilege.h"
 #include "popups/health_tracking_ui.h"
 #include "popups/timeline/peek.h"
+#include "process_management/app_install_manager.h"
 #include "process_management/app_run_state.h"
 #include "process_management/pebble_process_md.h"
 #include "process_management/process_heap.h"
@@ -38,7 +39,7 @@
 #endif
 #include "shell/normal/app_idle_timeout.h"
 #include "shell/normal/watchface.h"
-#include "shell/shell.h"
+#include "shell/system_shell.h"
 #include "shell/system_app_state_machine.h"
 #include "syscall/syscall.h"
 #include "syscall/syscall_internal.h"
@@ -53,6 +54,12 @@
 #include <stdio.h>
 #include <string.h>
 #include "pbl/util/testing.h"
+
+#if defined(CONFIG_SHELL) && !defined(CONFIG_RECOVERY_FW)
+#include <pbl/shell/shell.h>
+
+#include <errno.h>
+#endif
 
 #define RETURN_CRASH_TIMEOUT_TICKS (60 * RTC_TICKS_HZ)
 
@@ -179,6 +186,7 @@ void prv_dump_start_app_info(const PebbleProcessMd *app_md) {
 #else
 #define APP_STACK_NORMAL_SIZE (2 * 1024)
 #endif
+#define APP_STACK_SYSTEM_SIZE (4 * 1024)
 
 static size_t prv_get_app_segment_size(const PebbleProcessMd *app_md) {
   switch (process_metadata_get_app_sdk_type(app_md)) {
@@ -215,6 +223,8 @@ static size_t prv_get_app_stack_size(const PebbleProcessMd *app_md) {
     case ProcessAppSDKType_Legacy2x:
     case ProcessAppSDKType_Legacy3x:
       return 2 * 1024;
+    case ProcessAppSDKType_System:
+      return APP_STACK_SYSTEM_SIZE;
     default:
       return APP_STACK_NORMAL_SIZE;
   }
@@ -226,6 +236,23 @@ PBL_T_STATIC MemorySegment prv_get_app_ram_segment(void) {
 
 PBL_T_STATIC size_t prv_get_stack_guard_size(void) {
   return (uintptr_t)__stack_guard_size__;
+}
+
+#if !defined(CONFIG_RECOVERY_FW) && !defined(CONFIG_SHELL_SDK)
+static PBL_MUTEX_DEFINE(s_watchface_metrics_mutex);
+static char s_watchface_name[APP_NAME_SIZE_BYTES];
+static char s_watchface_uuid[UUID_STRING_BUFFER_LENGTH];
+#endif
+
+void pbl_analytics_external_collect_watchface(void) {
+#if !defined(CONFIG_RECOVERY_FW) && !defined(CONFIG_SHELL_SDK)
+  pbl_mutex_lock(&s_watchface_metrics_mutex, PBL_FOREVER);
+  if (s_watchface_name[0] != '\0') {
+    PBL_ANALYTICS_SET_STRING(watchface_name, s_watchface_name);
+    PBL_ANALYTICS_SET_STRING(watchface_uuid, s_watchface_uuid);
+  }
+  pbl_mutex_unlock(&s_watchface_metrics_mutex);
+#endif
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -369,10 +396,10 @@ static bool prv_app_start(const PebbleProcessMd *app_md, const void *args,
 #if !defined(CONFIG_RECOVERY_FW) && !defined(CONFIG_SHELL_SDK)
   if (app_md->process_type == ProcessTypeWatchface) {
     PBL_ANALYTICS_TIMER_START(watchface_time_ms);
-    PBL_ANALYTICS_SET_STRING(watchface_name, process_metadata_get_name(app_md));
-    char uuid_str[UUID_STRING_BUFFER_LENGTH];
-    uuid_to_string(&app_md->uuid, uuid_str);
-    PBL_ANALYTICS_SET_STRING(watchface_uuid, uuid_str);
+    pbl_mutex_lock(&s_watchface_metrics_mutex, PBL_FOREVER);
+    strncpy(s_watchface_name, process_metadata_get_name(app_md), sizeof(s_watchface_name) - 1);
+    uuid_to_string(&app_md->uuid, s_watchface_uuid);
+    pbl_mutex_unlock(&s_watchface_metrics_mutex);
   }
 #endif
 
@@ -845,26 +872,6 @@ bool app_manager_is_app_supported(const PebbleProcessMd *md) {
   return prv_get_app_segment_size(md) > 0;
 }
 
-// Commands
-///////////////////////////////////////////////////////////
-
-void command_get_active_app_metadata(void) {
-  char buffer[32];
-
-  const PebbleProcessMd *app_metadata = app_manager_get_current_app_md();
-  if (app_metadata != NULL) {
-    prompt_send_response_fmt(buffer, sizeof(buffer), "app name: %s",
-                             process_metadata_get_name(app_metadata));
-    prompt_send_response_fmt(buffer, sizeof(buffer), "is watchface: %d",
-                             (app_metadata->process_type == ProcessTypeWatchface));
-    prompt_send_response_fmt(buffer, sizeof(buffer), "visibility: %u", app_metadata->visibility);
-    prompt_send_response_fmt(buffer, sizeof(buffer), "bank: %d",
-                             (uint8_t)process_metadata_get_res_bank_num(app_metadata));
-  } else {
-    prompt_send_response("metadata lookup failed: no app running");
-  }
-}
-
 // -------------------------------------------------------------------------------------------
 /*!
   @brief User mode access to its UUID.
@@ -905,3 +912,22 @@ DEFINE_SYSCALL(ResAppNum, sys_get_current_resource_num, void) {
 DEFINE_SYSCALL(AppInstallId, sys_app_manager_get_current_app_id, void) {
   return app_manager_get_current_app_id();
 }
+
+#if defined(CONFIG_SHELL) && !defined(CONFIG_RECOVERY_FW)
+static int prv_cmd_app_active(const struct pbl_shell *sh, size_t argc, char **argv) {
+  const PebbleProcessMd *app_metadata = app_manager_get_current_app_md();
+  if (app_metadata == NULL) {
+    pbl_shell_error(sh, "metadata lookup failed: no app running");
+    return -ENOENT;
+  }
+
+  pbl_shell_print(sh, "app name: %s", process_metadata_get_name(app_metadata));
+  pbl_shell_print(sh, "is watchface: %d", (app_metadata->process_type == ProcessTypeWatchface));
+  pbl_shell_print(sh, "visibility: %u", app_metadata->visibility);
+  pbl_shell_print(sh, "bank: %d", (uint8_t)process_metadata_get_res_bank_num(app_metadata));
+  return 0;
+}
+
+PBL_SHELL_SUBCMD_ADD(sub_app, active, NULL, "Show the running app metadata", prv_cmd_app_active, 0,
+                     0);
+#endif

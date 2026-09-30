@@ -46,7 +46,6 @@
 #include "stubs_passert.h"
 #include "stubs_persist.h"
 #include "stubs_print.h"
-#include "stubs_prompt.h"
 #include "stubs_rand_ptr.h"
 #include "stubs_resources.h"
 #include "stubs_serial.h"
@@ -132,6 +131,7 @@ const PebbleProcessMd *app_install_get_md(AppInstallId id, bool worker) {
   if (id == APP_ID_DEFAULT_WATCHFACE) {
     static const PebbleProcessMdSystem s_default_watchface_md = {
       .common.process_type = ProcessTypeWatchface,
+      .name = "Default Watchface",
     };
     return (const PebbleProcessMd *)&s_default_watchface_md;
   } else {
@@ -164,7 +164,7 @@ void _REENT_INIT_PTR(void) {
 void app_comm_set_sniff_interval(const SniffInterval interval) {
 }
 
-void app_idle_timeout_start(void) {
+void app_idle_timeout_start(uint32_t timeout_ms) {
 }
 
 void app_idle_timeout_stop(void) {

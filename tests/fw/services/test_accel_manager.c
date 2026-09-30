@@ -16,7 +16,6 @@
 #include "stubs_mutex.h"
 #include "stubs_passert.h"
 #include "stubs_persist.h"
-#include "stubs_prompt.h"
 #include "stubs_msgq.h"
 #include "stubs_resources.h"
 #include "stubs_serial.h"
@@ -103,8 +102,7 @@ bool accel_get_double_tap_detection_enabled(void) {
   return false;
 }
 
-bool new_timer_add_work_callback_from_isr(NewTimerWorkCallback cb, void *data) {
-  return false;
+void new_timer_add_work_callback_from_isr(NewTimerWorkCallback cb, void *data) {
 }
 bool new_timer_add_work_callback(NewTimerWorkCallback cb, void *data) {
   return true;

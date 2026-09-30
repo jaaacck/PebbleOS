@@ -27,6 +27,8 @@ extern void pbl_analytics_external_collect_backlight_stats(void);
 extern void pbl_analytics_external_collect_vibe_stats(void);
 extern void pbl_analytics_external_collect_speaker_stats(void);
 extern void pbl_analytics_external_collect_settings(void);
+extern void pbl_analytics_external_collect_watchface(void);
+extern void pbl_analytics_external_collect_display_stats(void);
 
 #ifdef ANALYTICS_NATIVE
 
@@ -73,6 +75,8 @@ static void prv_heartbeat_system_task_cb(void *data) {
   pbl_analytics_external_collect_vibe_stats();
   pbl_analytics_external_collect_speaker_stats();
   pbl_analytics_external_collect_settings();
+  pbl_analytics_external_collect_watchface();
+  pbl_analytics_external_collect_display_stats();
 
   for (size_t i = 0U; i < ARRAY_LENGTH(s_heartbeat); i++) {
     s_heartbeat[i]();
@@ -168,10 +172,6 @@ DEFINE_SYSCALL(void, sys_pbl_analytics_add, enum pbl_analytics_key key, int32_t 
   }
 }
 
-void command_analytics_heartbeat(void) {
-  system_task_add_callback(prv_heartbeat_system_task_cb, NULL);
-}
-
 #else // No analytics backend: provide no-op stubs.
 
 void pbl_analytics_init(void) {
@@ -190,7 +190,19 @@ DEFINE_SYSCALL(void, sys_pbl_analytics_timer_stop, enum pbl_analytics_key key) {
 }
 DEFINE_SYSCALL(void, sys_pbl_analytics_add, enum pbl_analytics_key key, int32_t amount) {
 }
-void command_analytics_heartbeat(void) {
+
+#endif
+
+#if defined(CONFIG_SHELL) && defined(ANALYTICS_NATIVE)
+#include <pbl/shell/shell.h>
+
+static int prv_cmd_heartbeat(const struct pbl_shell *sh, size_t argc, char **argv) {
+  system_task_add_callback(prv_heartbeat_system_task_cb, NULL);
+  return 0;
 }
 
+PBL_SHELL_SUBCMD_SET_CREATE(sub_analytics);
+PBL_SHELL_CMD_REGISTER(analytics, sub_analytics, "Analytics", NULL);
+PBL_SHELL_SUBCMD_ADD(sub_analytics, heartbeat, NULL, "Collect a heartbeat now", prv_cmd_heartbeat,
+                     0, 0);
 #endif
