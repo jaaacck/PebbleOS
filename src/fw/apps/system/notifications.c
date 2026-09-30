@@ -30,6 +30,7 @@
 #include "pbl/services/notifications/alerts_preferences_private.h"
 #include "pbl/services/notifications/notification_storage.h"
 #include "pbl/services/timeline/notification_layout.h"
+#include "shell/normal/app_idle_timeout.h"
 #include "shell/prefs.h"
 #include "shell/system_theme.h"
 #include "system/passert.h"
@@ -220,6 +221,16 @@ static void prv_notifications_history_init(NotificationsData *data) {
   notifications_history_init(&data->history, range != NotificationGroupingRange_Never, cutoff);
 }
 
+// The idle timeout only applies to the menus: reading a notification can take a while without
+// pressing a button. The menus restart it when they reappear.
+static void prv_notification_window_shown(void) {
+  app_idle_timeout_set_suspended(true);
+}
+
+static void prv_menu_window_appear(void) {
+  app_idle_timeout_set_suspended(false);
+}
+
 static bool prv_push_single_notification_window(const Uuid *id) {
   notification_window_init_history(false);
   if (notification_window_is_modal()) {
@@ -229,6 +240,7 @@ static bool prv_push_single_notification_window(const Uuid *id) {
   notification_window_add_notification_by_id((Uuid *)id);
   notification_window_show();
   notification_window_focus_notification((Uuid *)id, false);
+  prv_notification_window_shown();
   return true;
 }
 
@@ -316,6 +328,10 @@ static void prv_group_window_load(Window *window) {
   menu_layer_set_selected_index(menu_layer, MenuIndex(0, 0), MenuRowAlignTop, false);
 }
 
+static void prv_group_window_appear(Window *window) {
+  prv_menu_window_appear();
+}
+
 static void prv_group_window_unload(Window *window) {
   NotificationGroupWindow *group_window = window_get_user_data(window);
   menu_layer_deinit(&group_window->menu_layer);
@@ -345,6 +361,7 @@ static void prv_push_group_window(NotificationsData *data, const NotificationHis
   window_set_user_data(&group_window->window, group_window);
   window_set_window_handlers(&group_window->window, &(WindowHandlers){
                                                       .load = prv_group_window_load,
+                                                      .appear = prv_group_window_appear,
                                                       .unload = prv_group_window_unload,
                                                     });
   data->group_window = group_window;
@@ -377,6 +394,7 @@ static bool prv_push_notification_window(NotificationsData *data,
   }
 
   notification_window_show();
+  prv_notification_window_shown();
   return true;
 }
 
@@ -942,6 +960,7 @@ static void prv_window_appear(Window *window) {
   NotificationsData *data = window_get_user_data(window);
 
   prv_update_text_layer_visibility(data);
+  prv_menu_window_appear();
 }
 
 static void prv_window_disappear(Window *window) {
@@ -1053,6 +1072,7 @@ static void prv_handle_deinit(void) {
 
 static void prv_s_main(void) {
   prv_handle_init();
+  app_idle_timeout_start(APP_IDLE_TIMEOUT_MENU_MS);
 
   app_event_loop();
 

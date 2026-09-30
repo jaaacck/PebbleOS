@@ -20,6 +20,8 @@ bool s_app_started = false;
 // Tracks the physical finger, independent of the app lifecycle: a finger on the screen halts the
 // timeout even across focus pause/resume, and liftoff restarts it only if nothing else pauses it.
 bool s_touch_held = false;
+// Set by the app while it shows something read without pressing buttons
+bool s_app_suspended = false;
 
 #ifndef CONFIG_NO_WATCH_TIMEOUT
 static void prv_kernel_callback_watchface_launch(void *data) {
@@ -36,7 +38,8 @@ static void prv_start_timer(bool create) {
     s_timer = new_timer_create();
   }
 
-  if (s_timer != TIMER_INVALID_ID && !s_app_paused && !s_touch_held && s_app_started) {
+  if (s_timer != TIMER_INVALID_ID && !s_app_paused && !s_touch_held && !s_app_suspended &&
+      s_app_started) {
     bool success = new_timer_start(s_timer, s_timeout_ms, prv_timeout_expired, NULL, 0 /* flags */);
     PBL_ASSERTN(success);
   }
@@ -67,8 +70,31 @@ void app_idle_timeout_set_duration(uint32_t timeout_ms) {
   launcher_task_add_callback(prv_kernel_callback_set_duration, (void *)(uintptr_t)s_generation);
 }
 
+// The generation and the requested state share the callback's data pointer
+static void prv_kernel_callback_set_suspended(void *data) {
+  const uintptr_t value = (uintptr_t)data;
+  if ((value >> 1) != ((uintptr_t)s_generation & (UINTPTR_MAX >> 1))) {
+    return;
+  }
+  s_app_suspended = (value & 1);
+  if (s_app_suspended) {
+    if (s_timer != TIMER_INVALID_ID) {
+      new_timer_stop(s_timer);
+    }
+  } else {
+    app_idle_timeout_refresh();
+  }
+}
+
+void app_idle_timeout_set_suspended(bool suspended) {
+  // Timer state is owned by KernelMain; hop there so pause/touch can't race the change
+  const uintptr_t value = ((uintptr_t)s_generation << 1) | (suspended ? 1 : 0);
+  launcher_task_add_callback(prv_kernel_callback_set_suspended, (void *)value);
+}
+
 void app_idle_timeout_stop(void) {
   s_generation++;
+  s_app_suspended = false;
   if (s_timer != TIMER_INVALID_ID) {
     new_timer_delete(s_timer);
     s_timer = TIMER_INVALID_ID;
