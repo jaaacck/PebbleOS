@@ -165,6 +165,59 @@ void test_app_idle_timeout__start_during_hold_waits_for_liftoff(void) {
   cl_assert(prv_is_scheduled());
 }
 
+void test_app_idle_timeout__suspend_halts_until_resumed(void) {
+  app_idle_timeout_start(APP_IDLE_TIMEOUT_MENU_MS);
+
+  app_idle_timeout_set_suspended(true);
+  cl_assert(!prv_is_scheduled());
+
+  // Button presses while suspended don't restart it
+  app_idle_timeout_refresh();
+  cl_assert(!prv_is_scheduled());
+
+  app_idle_timeout_set_suspended(false);
+  cl_assert(prv_is_scheduled());
+}
+
+void test_app_idle_timeout__suspend_composes_with_focus_pause(void) {
+  app_idle_timeout_start(APP_IDLE_TIMEOUT_MENU_MS);
+  app_idle_timeout_set_suspended(true);
+
+  // A modal coming and going must not restart the timer while suspended
+  app_idle_timeout_pause();
+  app_idle_timeout_resume();
+  cl_assert(!prv_is_scheduled());
+
+  // Nor must the app unsuspending it while a modal is up
+  app_idle_timeout_pause();
+  app_idle_timeout_set_suspended(false);
+  cl_assert(!prv_is_scheduled());
+  app_idle_timeout_resume();
+  cl_assert(prv_is_scheduled());
+}
+
+void test_app_idle_timeout__suspend_dropped_after_app_exit(void) {
+  app_idle_timeout_start(APP_IDLE_TIMEOUT_MENU_MS);
+  s_defer_callbacks = true;
+  app_idle_timeout_set_suspended(true);
+
+  // The app exits and the next one starts before the queued change runs
+  app_idle_timeout_stop();
+  app_idle_timeout_start(APP_IDLE_TIMEOUT_LAUNCHER_MS);
+  prv_run_deferred();
+
+  cl_assert(prv_is_scheduled());
+}
+
+void test_app_idle_timeout__stop_clears_suspension(void) {
+  app_idle_timeout_start(APP_IDLE_TIMEOUT_MENU_MS);
+  app_idle_timeout_set_suspended(true);
+
+  app_idle_timeout_stop();
+  app_idle_timeout_start(APP_IDLE_TIMEOUT_LAUNCHER_MS);
+  cl_assert(prv_is_scheduled());
+}
+
 void test_app_idle_timeout__expiry_launches_watchface(void) {
   app_idle_timeout_start(APP_IDLE_TIMEOUT_LAUNCHER_MS);
   cl_assert(stub_new_timer_fire(s_timer));
