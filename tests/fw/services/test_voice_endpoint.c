@@ -32,6 +32,7 @@ static AudioEndpointSessionId s_session_id;
 static bool s_app_initiated;
 static Uuid s_app_uuid;
 static uint8_t s_num_attributes;
+static int s_num_dictation_results;
 static char *s_reminder_str = NULL;
 static time_t s_timestamp;
 
@@ -51,6 +52,7 @@ void voice_handle_session_setup_result(VoiceEndpointResult result,
 void voice_handle_dictation_result(VoiceEndpointResult result, AudioEndpointSessionId session_id,
                                    Transcription *transcription, bool app_initiated,
                                    Uuid *app_uuid) {
+  s_num_dictation_results++;
   if (s_transcription) {
     free(s_transcription);
   }
@@ -123,9 +125,9 @@ static void prv_test_session_setup_msg(uint16_t endpoint_id, const uint8_t *data
                                        unsigned int length) {
   cl_assert_equal_i(endpoint_id, 11000);
 
-  size_t expected_len = sizeof(SessionSetupMsg) + sizeof(GenericAttribute) +
+  size_t expected_len = sizeof(SessionSetupMsg) + sizeof(struct pbl_generic_attr) +
                         sizeof(AudioTransferInfoSpeex) +
-                        (s_app_initiated ? (sizeof(GenericAttribute) + sizeof(Uuid)) : 0);
+                        (s_app_initiated ? (sizeof(struct pbl_generic_attr) + sizeof(Uuid)) : 0);
   cl_assert_equal_i(length, expected_len);
 
   SessionSetupMsg *msg = (SessionSetupMsg *)data;
@@ -386,7 +388,7 @@ void test_voice_endpoint__handle_dictation_result(void) {
   voice_endpoint_protocol_msg_callback(NULL, dictation_result, sizeof(dictation_result));
   fake_system_task_callbacks_invoke_pending();
   cl_assert(s_transcription != NULL);
-  size_t offset = sizeof(VoiceSessionResultMsg) + sizeof(GenericAttribute);
+  size_t offset = sizeof(VoiceSessionResultMsg) + sizeof(struct pbl_generic_attr);
   cl_assert_equal_m(s_transcription, &dictation_result[offset], sizeof(dictation_result) - offset);
   cl_assert_equal_i(s_session_id, 0x2211);
   cl_assert_equal_i(s_session_result, VoiceEndpointResultSuccess);
@@ -450,6 +452,19 @@ void test_voice_endpoint__handle_dictation_result(void) {
   cl_assert_equal_i(s_app_initiated, false);
   cl_assert_equal_m(&s_app_uuid, &s_uuid_invalid, sizeof(Uuid));
 
+  // test that an invalid transcription (an empty word) is reported once, as such
+  s_session_id = 0;
+  s_num_dictation_results = 0;
+  dictation_result[7] = VoiceEndpointResultSuccess;
+  dictation_result[17] = 0x00; // length of word #1 of sentence #1
+  voice_endpoint_protocol_msg_callback(NULL, dictation_result, sizeof(dictation_result));
+  fake_system_task_callbacks_invoke_pending();
+  cl_assert_equal_p(s_transcription, NULL);
+  cl_assert_equal_i(s_session_id, 0x2211);
+  cl_assert_equal_i(s_session_result, VoiceEndpointResultFailInvalidRecognizerResponse);
+  cl_assert_equal_i(s_num_dictation_results, 1);
+  dictation_result[17] = 0x05;
+
   // test that we can handle an invalid length message
   s_session_id = 0;
   dictation_result[7] = VoiceEndpointResultFailInvalidMessage; // indicate transcription failure
@@ -457,6 +472,53 @@ void test_voice_endpoint__handle_dictation_result(void) {
   fake_system_task_callbacks_invoke_pending();
   cl_assert_equal_i(s_session_id, 0);
   dictation_result[7] = VoiceEndpointResultSuccess; // restore transcription result
+}
+
+void test_voice_endpoint__handle_dictation_result_empty(void) {
+  uint8_t dictation_result[] = {
+    0x02, // Message ID: Dictation result
+    0x00,
+    0x00,
+    0x00,
+    0x00, // flags
+    0x11,
+    0x22, // Audio streaming session ID
+    0x00, // Voice session result - success
+
+    0x01, // attribute list - num attributes
+
+    0x02, // attribute type - transcription
+    0x04,
+    0x00, // attribute length
+
+    // Transcription
+    0x01, // Transcription type
+    0x01, // Sentence count
+
+    // Sentence #1
+    0x00,
+    0x00, // Word count
+  };
+
+  s_num_dictation_results = 0;
+  voice_endpoint_protocol_msg_callback(NULL, dictation_result, sizeof(dictation_result));
+  fake_system_task_callbacks_invoke_pending();
+  cl_assert_equal_p(s_transcription, NULL);
+  cl_assert_equal_i(s_session_id, 0x2211);
+  cl_assert_equal_i(s_session_result, VoiceEndpointResultFailInvalidRecognizerResponse);
+  cl_assert_equal_i(s_num_dictation_results, 1);
+
+  // no sentence at all
+  s_num_dictation_results = 0;
+  s_session_id = 0;
+  dictation_result[10] = 0x02; // attribute length
+  dictation_result[13] = 0x00; // sentence count
+  voice_endpoint_protocol_msg_callback(NULL, dictation_result, sizeof(dictation_result) - 2);
+  fake_system_task_callbacks_invoke_pending();
+  cl_assert_equal_p(s_transcription, NULL);
+  cl_assert_equal_i(s_session_id, 0x2211);
+  cl_assert_equal_i(s_session_result, VoiceEndpointResultFailInvalidRecognizerResponse);
+  cl_assert_equal_i(s_num_dictation_results, 1);
 }
 
 void test_voice_endpoint__handle_dictation_result_app_initiated(void) {
@@ -565,15 +627,16 @@ void test_voice_endpoint__handle_dictation_result_app_initiated(void) {
   voice_endpoint_protocol_msg_callback(NULL, dictation_result_1, sizeof(dictation_result_1));
   fake_system_task_callbacks_invoke_pending();
   cl_assert(s_transcription != NULL);
-  size_t offset = sizeof(VoiceSessionResultMsg) + sizeof(GenericAttribute);
-  cl_assert_equal_m(s_transcription, &dictation_result_1[offset],
-                    sizeof(dictation_result_1) - offset - sizeof(GenericAttribute) - sizeof(Uuid));
+  size_t offset = sizeof(VoiceSessionResultMsg) + sizeof(struct pbl_generic_attr);
+  cl_assert_equal_m(
+      s_transcription, &dictation_result_1[offset],
+      sizeof(dictation_result_1) - offset - sizeof(struct pbl_generic_attr) - sizeof(Uuid));
   cl_assert_equal_i(s_session_id, 0x2211);
   cl_assert_equal_i(s_session_result, VoiceEndpointResultSuccess);
   cl_assert_equal_i(s_app_initiated, true);
 
-  offset =
-      sizeof(VoiceSessionResultMsg) + sizeof(GenericAttribute) + 0x2F + sizeof(GenericAttribute);
+  offset = sizeof(VoiceSessionResultMsg) + sizeof(struct pbl_generic_attr) + 0x2F +
+           sizeof(struct pbl_generic_attr);
   cl_assert_equal_m(&s_app_uuid, &dictation_result_1[offset], sizeof(Uuid));
 }
 

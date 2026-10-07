@@ -20,6 +20,8 @@
 #include "fake_pbl_malloc.h"
 #include "fake_rtc.h"
 #include "fake_settings_file.h"
+#include "pbl/services/time.h"
+#include "pbl/util/units.h"
 
 static TimezoneInfo tz = {
   .tm_gmtoff = -8 * 60 * 60, // PST
@@ -337,7 +339,7 @@ static TimelineItem s_all_day_items[] = {
           .id = {0x01},
           .parent_id = {0},
           .timestamp = 1421020800, // midnight jan 12, 2015 UTC
-          .duration = MINUTES_PER_DAY,
+          .duration = PBL_MIN_PER_DAY,
           .type = TimelineItemTypePin,
           .all_day = 1,
           .layout = LayoutIdTest,
@@ -360,7 +362,7 @@ static TimelineItem s_all_day_items[] = {
           .id = {0x02},
           .parent_id = {0},
           .timestamp = 1421107200, // Tue Jan 13 midnight 2015 UTC
-          .duration = MINUTES_PER_DAY,
+          .duration = PBL_MIN_PER_DAY,
           .type = TimelineItemTypePin,
           .all_day = 1,
           .layout = LayoutIdTest,
@@ -383,7 +385,7 @@ static TimelineItem s_all_day_items[] = {
           .id = {0x03},
           .parent_id = {0},
           .timestamp = 1421107200, // Tue Jan 13 midnight 2015 UTC
-          .duration = MINUTES_PER_DAY,
+          .duration = PBL_MIN_PER_DAY,
           .type = TimelineItemTypePin,
           .all_day = 1,
           .layout = LayoutIdTest,
@@ -415,7 +417,7 @@ static TimelineItem s_extra_case_items[] = {
           .id = {0xbb},
           .parent_id = {0},
           .timestamp = s_feb_5_midnight_utc,
-          .duration = MINUTES_PER_DAY,
+          .duration = PBL_MIN_PER_DAY,
           .type = TimelineItemTypePin,
           .all_day = 1,
           .layout = LayoutIdTest,
@@ -1011,7 +1013,7 @@ void test_timeline__extra_case_middle_future(void) {
   timeline_init(&head);
   cl_assert_equal_i(
       timeline_iter_init(&iterator, &state, &head, TimelineIterDirectionFuture,
-                         s_feb_5_midnight + 8 * SECONDS_PER_HOUR + 16 * SECONDS_PER_MINUTE),
+                         s_feb_5_midnight + 8 * PBL_SEC_PER_HOUR + 16 * PBL_SEC_PER_MIN),
       0);
 
   cl_assert(uuid_equal(&state.pin.header.id, &s_extra_case_items[1].header.id));
@@ -1195,7 +1197,7 @@ void test_timeline__multiday(void) {
           .parent_id = {0},
           .timestamp = 1425312000, // 8:00 AM March 2 2015 PST
           .duration =
-              (16 + (2 * 24) + 13) * MINUTES_PER_HOUR, // lasts until March 5 1pm (4 days total)
+              (16 + (2 * 24) + 13) * PBL_MIN_PER_HOUR, // lasts until March 5 1pm (4 days total)
           .type = TimelineItemTypePin,
           .layout = LayoutIdTest,
         },
@@ -1239,8 +1241,8 @@ void test_timeline__multiday(void) {
   cl_assert(uuid_equal(&state.node->id, &multiday_item.header.id));
   cl_assert(state.node->all_day);
   cl_assert_equal_i(state.node->timestamp, 1425369600);
-  cl_assert_equal_i(state.node->duration, MINUTES_PER_DAY);
-  cl_assert_equal_i(state.current_day, midnight_march_2_pst + SECONDS_PER_DAY);
+  cl_assert_equal_i(state.node->duration, PBL_MIN_PER_DAY);
+  cl_assert_equal_i(state.current_day, midnight_march_2_pst + PBL_SEC_PER_DAY);
 
   // no more
   cl_assert(!iter_next(&iterator));
@@ -1261,7 +1263,7 @@ void test_timeline__all_day_single_day(void) {
           {0x29, 0xac, 0xd8, 0xb5, 0x09, 0xc7, 0x4c, 0x31, 0xbf, 0x6f, 0x03, 0x64, 0xd0, 0x5b, 0x9b,
            0xc2},
       .timestamp = midnight_march_3_utc,
-      .duration = MINUTES_PER_DAY,
+      .duration = PBL_MIN_PER_DAY,
       .type = TimelineItemTypePin,
       .layout = LayoutIdTest,
       .all_day = 1,
@@ -1286,7 +1288,7 @@ void test_timeline__all_day_single_day(void) {
   cl_assert(uuid_equal(&state.node->id, &all_day_item.header.id));
   cl_assert(state.node->all_day);
   cl_assert_equal_i(state.node->timestamp, midnight_march_3_pst);
-  cl_assert_equal_i(state.node->duration, MINUTES_PER_DAY);
+  cl_assert_equal_i(state.node->duration, PBL_MIN_PER_DAY);
   cl_assert_equal_i(state.current_day, midnight_march_3_pst);
 
   // no more
@@ -1305,7 +1307,7 @@ void test_timeline__24h_non_all_day_starting_mid_day(void) {
           {0x29, 0xac, 0xd8, 0xb5, 0x09, 0xc7, 0x4c, 0x31, 0xbf, 0x6f, 0x03, 0x64, 0xd0, 0x5b, 0x9b,
            0xc2},
       .timestamp = midnight_march_3_utc,
-      .duration = MINUTES_PER_DAY,
+      .duration = PBL_MIN_PER_DAY,
       .type = TimelineItemTypePin,
       .layout = LayoutIdTest,
       .all_day = 0, // this is a non-all-day event spanning 24h
@@ -1330,7 +1332,7 @@ void test_timeline__24h_non_all_day_starting_mid_day(void) {
   cl_assert(uuid_equal(&state.node->id, &all_day_item.header.id));
   cl_assert(!state.node->all_day);
   cl_assert_equal_i(state.node->timestamp, midnight_march_3_utc);
-  cl_assert_equal_i(state.node->duration, 8 * MINUTES_PER_HOUR);
+  cl_assert_equal_i(state.node->duration, 8 * PBL_MIN_PER_HOUR);
   cl_assert_equal_i(state.current_day, midnight_march_2_pst);
 
   // day 2
@@ -1338,9 +1340,9 @@ void test_timeline__24h_non_all_day_starting_mid_day(void) {
   cl_assert(uuid_equal(&state.pin.header.id, &all_day_item.header.id));
   cl_assert(uuid_equal(&state.node->id, &all_day_item.header.id));
   cl_assert(!state.node->all_day);
-  cl_assert_equal_i(state.node->timestamp, midnight_march_3_utc + SECONDS_PER_DAY);
+  cl_assert_equal_i(state.node->timestamp, midnight_march_3_utc + PBL_SEC_PER_DAY);
   cl_assert_equal_i(state.node->duration, 0);
-  cl_assert_equal_i(state.current_day, midnight_march_2_pst + SECONDS_PER_DAY);
+  cl_assert_equal_i(state.current_day, midnight_march_2_pst + PBL_SEC_PER_DAY);
 
   // no more
   cl_assert(!iter_next(&iterator));
@@ -1359,7 +1361,7 @@ void test_timeline__24h_non_all_day_starting_midnight(void) {
           {0x29, 0xac, 0xd8, 0xb5, 0x09, 0xc7, 0x4c, 0x31, 0xbf, 0x6f, 0x03, 0x64, 0xd0, 0x5b, 0x9b,
            0xc2},
       .timestamp = midnight_march_2_pst,
-      .duration = MINUTES_PER_DAY,
+      .duration = PBL_MIN_PER_DAY,
       .type = TimelineItemTypePin,
       .layout = LayoutIdTest,
       .all_day = 0, // this is a non-all-day event spanning 24h
@@ -1383,7 +1385,7 @@ void test_timeline__24h_non_all_day_starting_midnight(void) {
   cl_assert(uuid_equal(&state.node->id, &all_day_item.header.id));
   cl_assert(state.node->all_day);
   cl_assert_equal_i(state.node->timestamp, midnight_march_2_pst);
-  cl_assert_equal_i(state.node->duration, MINUTES_PER_DAY);
+  cl_assert_equal_i(state.node->duration, PBL_MIN_PER_DAY);
   cl_assert_equal_i(state.current_day, midnight_march_2_pst);
 
   // no more
@@ -1403,7 +1405,7 @@ void test_timeline__all_day_multiday(void) {
                0x9b, 0xc2},
           .parent_id = {0},
           .timestamp = 1425254400, // midnight March 2 2015 UTC
-          .duration = 4 * MINUTES_PER_DAY,
+          .duration = 4 * PBL_MIN_PER_DAY,
           .type = TimelineItemTypePin,
           .layout = LayoutIdTest,
           .all_day = 1,
@@ -1439,7 +1441,7 @@ void test_timeline__all_day_multiday(void) {
   cl_assert(uuid_equal(&state.node->id, &multiday_item.header.id));
   cl_assert(state.node->all_day);
   cl_assert_equal_i(state.node->timestamp, midnight_march_2_pst);
-  cl_assert_equal_i(state.node->duration, MINUTES_PER_DAY);
+  cl_assert_equal_i(state.node->duration, PBL_MIN_PER_DAY);
   cl_assert_equal_i(state.current_day, midnight_march_2_pst);
 
   // day 2
@@ -1447,9 +1449,9 @@ void test_timeline__all_day_multiday(void) {
   cl_assert(uuid_equal(&state.pin.header.id, &multiday_item.header.id));
   cl_assert(uuid_equal(&state.node->id, &multiday_item.header.id));
   cl_assert(state.node->all_day);
-  cl_assert_equal_i(state.node->timestamp, midnight_march_2_pst + SECONDS_PER_DAY);
-  cl_assert_equal_i(state.node->duration, MINUTES_PER_DAY);
-  cl_assert_equal_i(state.current_day, midnight_march_2_pst + SECONDS_PER_DAY);
+  cl_assert_equal_i(state.node->timestamp, midnight_march_2_pst + PBL_SEC_PER_DAY);
+  cl_assert_equal_i(state.node->duration, PBL_MIN_PER_DAY);
+  cl_assert_equal_i(state.current_day, midnight_march_2_pst + PBL_SEC_PER_DAY);
 
   // no more
   cl_assert(!iter_next(&iterator));
@@ -1471,7 +1473,7 @@ void test_timeline__all_day_ios_bug(void) {
                0x9b, 0xc2},
           .parent_id = {0},
           .timestamp = 1430236800, // 9am Apr 28, 2015 PDT
-          .duration = MINUTES_PER_DAY,
+          .duration = PBL_MIN_PER_DAY,
           .type = TimelineItemTypePin,
           .layout = LayoutIdTest,
           .all_day = 1,
@@ -1514,7 +1516,7 @@ void test_timeline__all_day_ios_bug_2(void) {
                0x9b, 0xc2},
           .parent_id = {0},
           .timestamp = 1430200800, // 9am Apr 28, 2015 MSK
-          .duration = MINUTES_PER_DAY,
+          .duration = PBL_MIN_PER_DAY,
           .type = TimelineItemTypePin,
           .layout = LayoutIdTest,
           .all_day = 1,
@@ -1586,7 +1588,7 @@ void test_timeline__0_duration_all_day(void) {
   cl_assert(uuid_equal(&state.node->id, &all_day_item.header.id));
   cl_assert(state.node->all_day);
   cl_assert_equal_i(state.node->timestamp, midnight_march_3_pst);
-  cl_assert_equal_i(state.node->duration, MINUTES_PER_DAY);
+  cl_assert_equal_i(state.node->duration, PBL_MIN_PER_DAY);
   cl_assert_equal_i(state.current_day, midnight_march_3_pst);
 
   // no more

@@ -6,20 +6,20 @@
 
 #include <cmsis_core.h>
 
-#include "pbl/drivers/mpu.h"
 #include "pbl/kernel/idle.h"
 #include "pbl/mcu/interrupts.h"
+#include "pbl/mcu/mpu.h"
 
 #include "kernel.h"
 #include "pbl/kernel/compiler.h"
 
-#if defined(__VFP_FP__) && !defined(__SOFTFP__)
+#ifdef CONFIG_CPU_HAS_FPU
 #define HAS_FPU 1
 #else
 #define HAS_FPU 0
 #endif
 
-#ifdef CONFIG_MPU_TYPE_ARMV8M
+#ifdef CONFIG_CPU_CORTEX_M_HAS_SPLIM
 #define HAS_PSPLIM 1
 #else
 #define HAS_PSPLIM 0
@@ -28,8 +28,6 @@
 #define NUM_MPU_REGIONS 4
 #ifdef CONFIG_SOC_SF32LB52
 #define FIRST_MPU_REGION 8
-#elif defined(CONFIG_QEMU) && defined(CONFIG_CORTEX_M33)
-#define FIRST_MPU_REGION 4
 #else
 #define FIRST_MPU_REGION 4
 #endif
@@ -150,14 +148,14 @@ void arch_thread_regions_set(struct pbl_thread *t, const MpuRegion *const *regio
     const MpuRegion *r = regions ? regions[i] : NULL;
     uint32_t rbar = 0;
     uint32_t attr = 0;
-#ifndef CONFIG_MPU_TYPE_ARMV8M
+#ifndef CONFIG_ARMV8_M_MAINLINE
     rbar = MPU_RBAR_VALID_Msk | (FIRST_MPU_REGION + i);
 #endif
     if (r != NULL) {
       KERNEL_ASSERT(r->region_num == FIRST_MPU_REGION + i);
       uint32_t base_reg;
       mpu_get_register_settings(r, &base_reg, &attr);
-#ifdef CONFIG_MPU_TYPE_ARMV8M
+#ifdef CONFIG_ARMV8_M_MAINLINE
       rbar = base_reg;
 #else
       rbar |= base_reg & ~(MPU_RBAR_VALID_Msk | MPU_RBAR_REGION_Msk);

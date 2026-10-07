@@ -9,6 +9,8 @@
 #include <pbl/logging/logging.h>
 #include "system/passert.h"
 #include "pbl/util/math.h"
+#include "pbl/services/time.h"
+#include "pbl/util/units.h"
 
 PBL_LOG_MODULE_DEFINE(cron, CONFIG_CRON_LOG_LEVEL);
 
@@ -21,10 +23,12 @@ static ListNode *s_scheduled_jobs;
 static void prv_timer_callback(void *data);
 
 //! One-shot timer armed for the next job's execute time. Re-armed after every
-//! list mutation and every firing; stopped when no jobs are scheduled. Capped
-//! so that long sleeps re-check at least hourly, which keeps any tick-clock
-//! drift across sleep bounded.
-#define CRON_MAX_ARM_INTERVAL_S (60 * 60)
+//! list mutation and every firing; stopped when no jobs are scheduled. It runs on
+//! the system tick, which drifts from the RTC in deep sleep, so it aims early by
+//! more than the drift and re-arms for what is left when it fires early; the
+//! margin lands it after the RTC second turns.
+#define CRON_ARM_EARLY_DIVISOR 256U
+#define CRON_ARM_MARGIN_MS     10U
 static TimerID s_wakeup_timer = TIMER_INVALID_ID;
 
 //! Arm (or stop) the wakeup timer for the head job. s_list_mutex must be held.
@@ -37,13 +41,14 @@ static void prv_arm_wakeup(void) {
   uint16_t milliseconds;
   rtc_get_time_ms(&now, &milliseconds);
   const time_t execute_time = ((struct pbl_cron_job *)s_scheduled_jobs)->cached_execute_time;
-  int32_t delta_s = (execute_time > now) ? (int32_t)(execute_time - now) : 0;
-  delta_s = MIN(delta_s, CRON_MAX_ARM_INTERVAL_S);
-  uint32_t timeout_ms = (uint32_t)delta_s * 1000U;
-  if (timeout_ms > milliseconds) {
-    timeout_ms -= milliseconds;
+  uint64_t timeout_ms = 0;
+  if (execute_time > now) {
+    timeout_ms = (uint64_t)(execute_time - now) * 1000U - milliseconds;
+    timeout_ms -= timeout_ms / CRON_ARM_EARLY_DIVISOR;
+    timeout_ms += CRON_ARM_MARGIN_MS;
   }
-  new_timer_start(s_wakeup_timer, timeout_ms, prv_timer_callback, NULL, 0 /*flags*/);
+  new_timer_start(s_wakeup_timer, (uint32_t)MIN(timeout_ms, UINT32_MAX), prv_timer_callback, NULL,
+                  0 /*flags*/);
 }
 
 // -------------------------------------------------------------------------------------------
@@ -91,7 +96,7 @@ void pbl_cron_handle_clock_change(int32_t utc_time_delta, int32_t gmt_offset_del
     s_scheduled_jobs = list_pop_head(s_scheduled_jobs);
     // Re-calculate the execute time.
     // See the notes in the API header on how this works.
-    if (must_recalc || change_diff >= job->clock_change_tolerance) {
+    if (!job->absolute && (must_recalc || change_diff >= job->clock_change_tolerance)) {
       job->cached_execute_time = pbl_cron_job_get_execute_time(job);
     }
     PBL_LOG_DBG("Cron job rescheduled for %ld", job->cached_execute_time);
@@ -104,6 +109,10 @@ void pbl_cron_handle_clock_change(int32_t utc_time_delta, int32_t gmt_offset_del
   pbl_mutex_unlock(&s_list_mutex);
 
   // We want to run any tasks we've skipped over.
+  prv_timer_callback(NULL);
+}
+
+void pbl_cron_handle_clock_correction(void) {
   prv_timer_callback(NULL);
 }
 
@@ -122,6 +131,7 @@ time_t pbl_cron_job_schedule(struct pbl_cron_job *job) {
 
   const time_t now = rtc_get_time();
   // Always update the execution time.
+  job->absolute = false;
   job->cached_execute_time = pbl_cron_job_get_execute_time_from_epoch(job, now);
   // If not scheduled yet, schedule it.
   if (!prv_is_scheduled(job)) {
@@ -134,6 +144,22 @@ time_t pbl_cron_job_schedule(struct pbl_cron_job *job) {
   pbl_mutex_unlock(&s_list_mutex);
 
   return job->cached_execute_time;
+}
+
+// ------------------------------------------------------------------------------------------
+void pbl_cron_job_schedule_at(struct pbl_cron_job *job, time_t utc_time) {
+  pbl_mutex_lock(&s_list_mutex, PBL_FOREVER);
+
+  if (prv_is_scheduled(job)) {
+    list_remove(&job->list_node, &s_scheduled_jobs, NULL);
+  }
+  job->absolute = true;
+  job->cached_execute_time = utc_time;
+  s_scheduled_jobs = list_sorted_add(s_scheduled_jobs, &job->list_node, prv_sort, true);
+  PBL_LOG_DBG("Cron job scheduled at %ld", job->cached_execute_time);
+
+  prv_arm_wakeup();
+  pbl_mutex_unlock(&s_list_mutex);
 }
 
 // ------------------------------------------------------------------------------------------
@@ -283,13 +309,13 @@ static bool prv_adjust_for_wday_spec(const struct pbl_cron_job *cron, struct tm 
   mktime(cron_tm);
   cron_tm->tm_mday -= 1;
   // We have 1 week to find a fitting date
-  for (int l = 0; l < DAYS_PER_WEEK; l++) {
+  for (int l = 0; l < PBL_DAY_PER_WEEK; l++) {
     if (cron->wday & (1 << cron_tm->tm_wday)) {
       break;
     }
     // Advance the day.
     cron_tm->tm_mday++;
-    cron_tm->tm_wday = (cron_tm->tm_wday + 1) % DAYS_PER_WEEK;
+    cron_tm->tm_wday = (cron_tm->tm_wday + 1) % PBL_DAY_PER_WEEK;
     adjusted = true;
   }
   return adjusted;

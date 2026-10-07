@@ -10,39 +10,90 @@
 #include <stdint.h>
 #include <time.h>
 
-//! Brings the watch's iOS notifications back in line with Notification Center after a
-//! reconnection, using the notifications iOS replays when the watch subscribes to ANCS.
+/**
+ * @defgroup services_notifications_ancs_ancs_reconcile ANCS reconciliation
+ * @ingroup services_notifications_ancs
+ * @brief Brings the iOS notifications on the watch in line with Notification Center.
+ *
+ * After a reconnection iOS replays the notifications it still has when the watch subscribes to
+ * ANCS. Active iOS notifications on the watch that iOS no longer has are dismissed.
+ * @{
+ */
 
-//! A notification iOS still has, identified by its content rather than only its UID
+/** @brief A notification iOS still has, identified by its content rather than only its UID. */
 typedef struct {
+  /** ANCS notification UID. */
   uint32_t uid;
+  /** Hash of the app identifier, see ancs_notifications_util_hash_app_id(). */
   uint32_t app_id_hash;
-  //! 0 when iOS sent no valid date
+  /** UTC date of the notification, or 0 when iOS sent no valid date. */
   time_t timestamp;
 } ANCSReconcileEntry;
 
-//! Builds an entry from the app identifier and date iOS returned for a notification
+/**
+ * @brief Build an entry from the attributes iOS returned for a notification.
+ *
+ * @param uid ANCS notification UID.
+ * @param app_id App identifier attribute.
+ * @param date Date attribute.
+ * @param[out] entry_out Entry to fill.
+ */
 void ancs_reconcile_entry_from_attributes(uint32_t uid, const ANCSAttribute *app_id,
                                           const ANCSAttribute *date, ANCSReconcileEntry *entry_out);
 
-//! @return whether the watch has any active iOS notification to compare
+/**
+ * @brief Check whether the watch has any active iOS notification to compare.
+ *
+ * @return true if there is one.
+ */
 bool ancs_reconcile_has_candidates(void);
 
-//! Finds the newest active iOS notification on the watch whose UID is in `uids`
-//! @return false if there is none
+/**
+ * @brief Find the newest active iOS notification on the watch whose UID iOS replayed.
+ *
+ * @param uids UIDs iOS replayed.
+ * @param num_uids Number of UIDs.
+ * @param[out] canary_out Entry of the notification found.
+ * @return false if there is none.
+ */
 bool ancs_reconcile_find_canary(const uint32_t *uids, size_t num_uids,
                                 ANCSReconcileEntry *canary_out);
 
-//! @return whether iOS's current entry for the canary's UID is still the same notification
+/**
+ * @brief Check whether iOS still describes the canary the same way.
+ *
+ * @param expected Entry of the canary on the watch.
+ * @param fetched Entry iOS returned for the canary's UID.
+ * @return true if it is still the same notification.
+ */
 bool ancs_reconcile_canary_matches(const ANCSReconcileEntry *expected,
                                    const ANCSReconcileEntry *fetched);
 
-//! UIDs are unchanged: dismisses the active iOS notifications whose UID iOS no longer has.
-//! Notifications with a UID in `live_uids` arrived since reconnecting and are always kept.
+/**
+ * @brief Dismiss the active iOS notifications whose UID iOS no longer has.
+ *
+ * For use when the UIDs are unchanged.
+ *
+ * @param uids UIDs iOS replayed.
+ * @param num_uids Number of UIDs.
+ * @param live_uids UIDs of notifications received since reconnecting, which are always kept.
+ * @param num_live_uids Number of live UIDs.
+ */
 void ancs_reconcile_by_uid(const uint32_t *uids, size_t num_uids, const uint32_t *live_uids,
                            size_t num_live_uids);
 
-//! UIDs changed: matches notifications on app and timestamp, dismisses the ones iOS no longer has
-//! and moves the others to their new UIDs.
+/**
+ * @brief Match notifications on app and timestamp, dismiss the ones iOS no longer has and move
+ * the others to their new UIDs.
+ *
+ * For use when the UIDs changed.
+ *
+ * @param entries Entries iOS replayed.
+ * @param num_entries Number of entries.
+ * @param live_uids UIDs of notifications received since reconnecting, which are always kept.
+ * @param num_live_uids Number of live UIDs.
+ */
 void ancs_reconcile_by_content(const ANCSReconcileEntry *entries, size_t num_entries,
                                const uint32_t *live_uids, size_t num_live_uids);
+
+/** @} */

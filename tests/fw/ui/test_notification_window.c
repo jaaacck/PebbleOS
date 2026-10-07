@@ -69,7 +69,6 @@
 #include "stubs_simple_dialog.h"
 #include "stubs_sleep.h"
 #include "stubs_sports_layout.h"
-#include "stubs_stringlist.h"
 #include "stubs_syscall_internal.h"
 #include "stubs_syscalls.h"
 #include "stubs_task_wdt.h"
@@ -161,11 +160,6 @@ PreferredContentSize alerts_preferences_get_notification_content_size(void) {
 
 NotificationHoldSelectAction alerts_preferences_get_notification_hold_select_action(void) {
   return NotificationHoldSelectAction_DismissAll;
-}
-
-static time_t s_ancs_subscribed_since;
-time_t ancs_get_subscribed_since(void) {
-  return s_ancs_subscribed_since;
 }
 
 int16_t interpolate_int16(int32_t normalized, int16_t from, int16_t to) {
@@ -370,6 +364,11 @@ bool graphics_release_frame_buffer(GContext *ctx, GBitmap *buffer) {
 
 extern NotificationWindowData s_notification_window_data;
 extern bool s_in_use;
+
+static time_t s_ancs_subscribed_since;
+time_t ancs_get_subscribed_since(void) {
+  return s_ancs_subscribed_since;
+}
 
 void test_notification_window__initialize(void) {
   s_ancs_subscribed_since = 0;

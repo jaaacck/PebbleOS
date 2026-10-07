@@ -58,6 +58,7 @@
 #include "fake_spi_flash.h"
 #include "fake_settings_file.h"
 #include "fake_events.h"
+#include "pbl/util/units.h"
 
 bool calendar_layout_verify(bool existing_attributes[]) {
   return true;
@@ -105,7 +106,7 @@ static TimelineItem s_item1 = {
         .id =
             {0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
              0x00, 0x00},
-        .timestamp = 1 * SECONDS_PER_MINUTE,
+        .timestamp = 1 * PBL_SEC_PER_MIN,
         .duration = 15,
         .type = TimelineItemTypePin,
         .all_day = false,
@@ -123,7 +124,7 @@ static TimelineItem s_item2 = {
         .id =
             {0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
              0x00, 0x00},
-        .timestamp = 5 * SECONDS_PER_MINUTE,
+        .timestamp = 5 * PBL_SEC_PER_MIN,
         .duration = 20,
         .type = TimelineItemTypePin,
         .all_day = false,
@@ -141,7 +142,7 @@ static TimelineItem s_item3 = {
         .id =
             {0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
              0x00, 0x00},
-        .timestamp = 9 * SECONDS_PER_MINUTE,
+        .timestamp = 9 * PBL_SEC_PER_MIN,
         .duration = 5,
         .type = TimelineItemTypePin,
         .all_day = false,
@@ -159,7 +160,7 @@ static TimelineItem s_future_item = {
         .id =
             {0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
              0x00, 0x00},
-        .timestamp = 100 * SECONDS_PER_MINUTE,
+        .timestamp = 100 * PBL_SEC_PER_MIN,
         .duration = 10,
         .type = TimelineItemTypePin,
         .all_day = false,
@@ -177,7 +178,7 @@ static TimelineItem s_short_future_item = {
         .id =
             {0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
              0x00, 0x00},
-        .timestamp = 100 * SECONDS_PER_MINUTE,
+        .timestamp = 100 * PBL_SEC_PER_MIN,
         .duration = 5,
         .type = TimelineItemTypePin,
         .all_day = false,
@@ -196,7 +197,7 @@ static TimelineItem s_weather_item = {
         .id =
             {0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
              0x00, 0x00},
-        .timestamp = 10 * SECONDS_PER_MINUTE,
+        .timestamp = 10 * PBL_SEC_PER_MIN,
         .duration = 10,
         .type = TimelineItemTypePin,
         .all_day = false,
@@ -215,7 +216,7 @@ static TimelineItem s_all_day_item = {
         .id =
             {0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
              0x00, 0x00},
-        .timestamp = 100 * SECONDS_PER_MINUTE,
+        .timestamp = 100 * PBL_SEC_PER_MIN,
         .duration = 10,
         .type = TimelineItemTypePin,
         .all_day = true,
@@ -234,7 +235,7 @@ static TimelineItem s_point_item = {
         .id =
             {0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
              0x00, 0x00},
-        .timestamp = 20 * SECONDS_PER_MINUTE,
+        .timestamp = 20 * PBL_SEC_PER_MIN,
         .duration = 0,
         .type = TimelineItemTypePin,
         .all_day = false,
@@ -253,7 +254,7 @@ static TimelineItem s_recurring_calendar_item1 = {
         .id =
             {0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
              0x00, 0x00},
-        .timestamp = 50 * SECONDS_PER_MINUTE - SECONDS_PER_DAY,
+        .timestamp = 50 * PBL_SEC_PER_MIN - PBL_SEC_PER_DAY,
         .duration = 30,
         .type = TimelineItemTypePin,
         .all_day = false,
@@ -272,7 +273,7 @@ static TimelineItem s_recurring_calendar_item2 = {
         .id =
             {0x0a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
              0x00, 0x00},
-        .timestamp = 50 * SECONDS_PER_MINUTE,
+        .timestamp = 50 * PBL_SEC_PER_MIN,
         .duration = 30,
         .type = TimelineItemTypePin,
         .all_day = false,
@@ -291,7 +292,7 @@ static TimelineItem s_recurring_calendar_item3 = {
         .id =
             {0x0b, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
              0x00, 0x00},
-        .timestamp = 50 * SECONDS_PER_MINUTE + SECONDS_PER_DAY,
+        .timestamp = 50 * PBL_SEC_PER_MIN + PBL_SEC_PER_DAY,
         .duration = 30,
         .type = TimelineItemTypePin,
         .all_day = false,
@@ -310,7 +311,7 @@ static TimelineItem s_back_to_back_calendar_item1 = {
         .id =
             {0x0c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
              0x00, 0x00},
-        .timestamp = 60 * SECONDS_PER_MINUTE,
+        .timestamp = 60 * PBL_SEC_PER_MIN,
         .duration = 30,
         .type = TimelineItemTypePin,
         .all_day = false,
@@ -329,7 +330,7 @@ static TimelineItem s_back_to_back_calendar_item2 = {
         .id =
             {0x0d, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
              0x00, 0x00},
-        .timestamp = 90 * SECONDS_PER_MINUTE,
+        .timestamp = 90 * PBL_SEC_PER_MIN,
         .duration = 30,
         .type = TimelineItemTypePin,
         .all_day = false,
@@ -464,7 +465,7 @@ void test_timeline_peek_event__no_events(void) {
 void test_timeline_peek_event__calendar_event(void) {
   ADD_EVENT(.item = &s_item1);
   CHECK_EVENT(.count = 2, .item_id = s_item1.header.id, .num_concurrent = 0,
-              .timeout_ms = SECONDS_PER_MINUTE * MS_PER_SECOND,
+              .timeout_ms = PBL_SEC_PER_MIN * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_ShowWillStart, .is_first_event = true);
 }
 
@@ -476,7 +477,7 @@ void test_timeline_peek_event__calendar_event_all_day(void) {
 void test_timeline_peek_event__weather_event(void) {
   ADD_EVENT(.item = &s_weather_item);
   CHECK_EVENT(.count = 2, .item_id = s_weather_item.header.id, .num_concurrent = 0,
-              .timeout_ms = s_weather_item.header.timestamp * MS_PER_SECOND,
+              .timeout_ms = s_weather_item.header.timestamp * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_ShowWillStart, .is_first_event = true);
 }
 
@@ -485,20 +486,20 @@ void test_timeline_peek_event__concurrent_count_and_priority(void) {
   // Also test that upcoming items take priority
   ADD_EVENT(.item = &s_item1);
   CHECK_EVENT(.count = 2, .item_id = s_item1.header.id, .num_concurrent = 0,
-              .timeout_ms = SECONDS_PER_MINUTE * MS_PER_SECOND,
+              .timeout_ms = PBL_SEC_PER_MIN * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_ShowWillStart, .is_first_event = true);
   ADD_EVENT(.item = &s_item2);
   CHECK_EVENT(.count = 3, .item_id = s_item2.header.id, .num_concurrent = 1,
-              .timeout_ms = SECONDS_PER_MINUTE * MS_PER_SECOND,
+              .timeout_ms = PBL_SEC_PER_MIN * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_ShowWillStart);
   ADD_EVENT(.item = &s_item3);
   CHECK_EVENT(.count = 4, .item_id = s_item3.header.id, .num_concurrent = 2,
-              .timeout_ms = SECONDS_PER_MINUTE * MS_PER_SECOND,
+              .timeout_ms = PBL_SEC_PER_MIN * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_ShowWillStart);
   // The future item is too far to increase the concurrent count
   ADD_EVENT(.item = &s_future_item);
   CHECK_EVENT(.count = 5, .item_id = s_item3.header.id, .num_concurrent = 2,
-              .timeout_ms = SECONDS_PER_MINUTE * MS_PER_SECOND,
+              .timeout_ms = PBL_SEC_PER_MIN * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_ShowWillStart);
 }
 
@@ -508,17 +509,18 @@ void test_timeline_peek_event__before_upcoming_event(void) {
   CHECK_EVENT(.count = 2, .item_id = s_future_item.header.id, .num_concurrent = 0,
               .timeout_ms =
                   ((s_future_item.header.timestamp - TIMELINE_PEEK_DEFAULT_SHOW_BEFORE_TIME_S) *
-                   MS_PER_SECOND),
+                   PBL_MSEC_PER_SEC),
               .time_type = TimelinePeekTimeType_SomeTimeNext, .is_first_event = true);
 }
 
 void test_timeline_peek_event__before_upcoming_event_custom_5min(void) {
   // Check that the event is about an upcoming item at a custom 5min timeout
-  const unsigned int show_before_time_s = 5 * SECONDS_PER_MINUTE;
+  const unsigned int show_before_time_s = 5 * PBL_SEC_PER_MIN;
   timeline_peek_set_show_before_time(show_before_time_s);
   ADD_EVENT(.item = &s_future_item);
   CHECK_EVENT(.count = 3, .item_id = s_future_item.header.id, .num_concurrent = 0,
-              .timeout_ms = ((s_future_item.header.timestamp - show_before_time_s) * MS_PER_SECOND),
+              .timeout_ms =
+                  ((s_future_item.header.timestamp - show_before_time_s) * PBL_MSEC_PER_SEC),
               .time_type = TimelinePeekTimeType_SomeTimeNext, .is_first_event = true);
 }
 
@@ -527,39 +529,39 @@ void test_timeline_peek_event__before_event_starts(void) {
   rtc_set_time(s_future_item.header.timestamp - TIMELINE_PEEK_DEFAULT_SHOW_BEFORE_TIME_S / 2);
   ADD_EVENT(.item = &s_future_item);
   CHECK_EVENT(.count = 2, .item_id = s_future_item.header.id, .num_concurrent = 0,
-              .timeout_ms = (TIMELINE_PEEK_DEFAULT_SHOW_BEFORE_TIME_S * MS_PER_SECOND) / 2,
+              .timeout_ms = (TIMELINE_PEEK_DEFAULT_SHOW_BEFORE_TIME_S * PBL_MSEC_PER_SEC) / 2,
               .time_type = TimelinePeekTimeType_ShowWillStart, .is_first_event = true);
 }
 
 void test_timeline_peek_event__after_event_starts(void) {
   // Check that the event is about an item about to pass the hide time
-  rtc_set_time(5 * SECONDS_PER_MINUTE);
+  rtc_set_time(5 * PBL_SEC_PER_MIN);
   ADD_EVENT(.item = &s_item1);
   CHECK_EVENT(.count = 2, .item_id = s_item1.header.id, .num_concurrent = 0,
               .timeout_ms =
                   ((TIMELINE_PEEK_HIDE_AFTER_TIME_S - (rtc_get_time() - s_item1.header.timestamp)) *
-                   MS_PER_SECOND),
+                   PBL_MSEC_PER_SEC),
               .time_type = TimelinePeekTimeType_ShowStarted, .is_first_event = true);
 }
 
 void test_timeline_peek_event__after_event_starts_short_event(void) {
   // Check that for a short event, the timeout is the end of the item instead
-  rtc_set_time(10 * SECONDS_PER_MINUTE);
+  rtc_set_time(10 * PBL_SEC_PER_MIN);
   ADD_EVENT(.item = &s_item3);
   CHECK_EVENT(.count = 2, .item_id = s_item3.header.id, .num_concurrent = 0,
-              .timeout_ms = 4 * SECONDS_PER_MINUTE * MS_PER_SECOND,
+              .timeout_ms = 4 * PBL_SEC_PER_MIN * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_ShowStarted, .is_first_event = true);
 }
 
 void test_timeline_peek_event__after_event_passed_hide_time(void) {
   // Check that there is no event if the last item passed the hide time
-  rtc_set_time(15 * SECONDS_PER_MINUTE);
+  rtc_set_time(15 * PBL_SEC_PER_MIN);
   ADD_EVENT(.item = &s_item2);
   CHECK_NO_EVENTS(.count = 2);
 }
 
 void test_timeline_peek_event__after_event_passed_completely(void) {
-  rtc_set_time(30 * SECONDS_PER_MINUTE);
+  rtc_set_time(30 * PBL_SEC_PER_MIN);
   ADD_EVENT(.item = &s_item2);
   CHECK_NO_EVENTS(.count = 2, .is_future_empty = true);
 }
@@ -570,7 +572,7 @@ void test_timeline_peek_event__dismiss_event(void) {
   rtc_set_time(item->header.timestamp - TIMELINE_PEEK_DEFAULT_SHOW_BEFORE_TIME_S / 2);
   ADD_EVENT(.item = item);
   CHECK_EVENT(.count = 2, .item_id = item->header.id, .num_concurrent = 0,
-              .timeout_ms = (TIMELINE_PEEK_DEFAULT_SHOW_BEFORE_TIME_S * MS_PER_SECOND) / 2,
+              .timeout_ms = (TIMELINE_PEEK_DEFAULT_SHOW_BEFORE_TIME_S * PBL_MSEC_PER_SEC) / 2,
               .time_type = TimelinePeekTimeType_ShowWillStart, .is_first_event = true);
 
   // Simulate a timeline peek dismiss
@@ -581,40 +583,37 @@ void test_timeline_peek_event__dismiss_event(void) {
 }
 
 void test_timeline_peek_event__first_event_with_past_event(void) {
-  TimelineItem item =
-      DEFINE_EVENT(.id = 0x01, .timestamp = 20 * SECONDS_PER_MINUTE, .duration = 70);
+  TimelineItem item = DEFINE_EVENT(.id = 0x01, .timestamp = 20 * PBL_SEC_PER_MIN, .duration = 70);
   TimelineItem PBL_UNUSED item2 =
-      DEFINE_EVENT(.id = 0x02, .timestamp = -50 * SECONDS_PER_MINUTE, .duration = 30);
+      DEFINE_EVENT(.id = 0x02, .timestamp = -50 * PBL_SEC_PER_MIN, .duration = 30);
   unsigned int timeout_s = item.header.timestamp - TIMELINE_PEEK_DEFAULT_SHOW_BEFORE_TIME_S;
   CHECK_EVENT(.count = 3, .item_id = item.header.id, .num_concurrent = 0,
-              .timeout_ms = timeout_s * MS_PER_SECOND,
+              .timeout_ms = timeout_s * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_SomeTimeNext, .is_first_event = true);
 }
 
 void test_timeline_peek_event__first_event_with_all_day_event_before(void) {
   // All day events show up if no timed event has yet passed
-  TimelineItem item =
-      DEFINE_EVENT(.id = 0x01, .timestamp = 20 * SECONDS_PER_MINUTE, .duration = 70);
+  TimelineItem item = DEFINE_EVENT(.id = 0x01, .timestamp = 20 * PBL_SEC_PER_MIN, .duration = 70);
   TimelineItem PBL_UNUSED item2 =
-      DEFINE_EVENT(.id = 0x02, .timestamp = 0, .duration = MINUTES_PER_DAY, .all_day = true);
+      DEFINE_EVENT(.id = 0x02, .timestamp = 0, .duration = PBL_MIN_PER_DAY, .all_day = true);
   unsigned int timeout_s = item.header.timestamp - TIMELINE_PEEK_DEFAULT_SHOW_BEFORE_TIME_S;
   CHECK_EVENT(.count = 3, .item_id = item.header.id, .num_concurrent = 0,
-              .timeout_ms = timeout_s * MS_PER_SECOND,
+              .timeout_ms = timeout_s * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_SomeTimeNext);
 }
 
 void test_timeline_peek_event__first_event_with_all_day_event_after(void) {
   // After a timed event has passed, all day events no longer show up for the day
-  rtc_set_time(SECONDS_PER_HOUR);
-  TimelineItem item =
-      DEFINE_EVENT(.id = 0x01, .timestamp = SECONDS_PER_HOUR + 20 * SECONDS_PER_MINUTE,
-                   .duration = 70);
+  rtc_set_time(PBL_SEC_PER_HOUR);
+  TimelineItem item = DEFINE_EVENT(.id = 0x01, .timestamp = PBL_SEC_PER_HOUR + 20 * PBL_SEC_PER_MIN,
+                                   .duration = 70);
   TimelineItem PBL_UNUSED item2 =
-      DEFINE_EVENT(.id = 0x02, .timestamp = 0, .duration = MINUTES_PER_DAY, .all_day = true);
+      DEFINE_EVENT(.id = 0x02, .timestamp = 0, .duration = PBL_MIN_PER_DAY, .all_day = true);
   TimelineItem PBL_UNUSED item3 = DEFINE_EVENT(.id = 0x03, .timestamp = 0, .duration = 10);
   unsigned int timeout_s = 600;
   CHECK_EVENT(.count = 4, .item_id = item.header.id, .num_concurrent = 0,
-              .timeout_ms = timeout_s * MS_PER_SECOND,
+              .timeout_ms = timeout_s * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_SomeTimeNext, .is_first_event = true);
 }
 
@@ -624,17 +623,17 @@ void test_timeline_peek_event__one_event_lifecycle(void) {
   ADD_EVENT(.item = item);
   unsigned int timeout_s = item->header.timestamp - TIMELINE_PEEK_DEFAULT_SHOW_BEFORE_TIME_S;
   CHECK_EVENT(.count = 2, .item_id = item->header.id, .num_concurrent = 0,
-              .timeout_ms = timeout_s * MS_PER_SECOND,
+              .timeout_ms = timeout_s * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_SomeTimeNext, .is_first_event = true);
   prv_invoke_timer(timeout_s);
   timeout_s = TIMELINE_PEEK_DEFAULT_SHOW_BEFORE_TIME_S;
   CHECK_EVENT(.count = 3, .item_id = item->header.id, .num_concurrent = 0,
-              .timeout_ms = timeout_s * MS_PER_SECOND,
+              .timeout_ms = timeout_s * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_ShowWillStart, .is_first_event = true);
   prv_invoke_timer(timeout_s);
   timeout_s = TIMELINE_PEEK_HIDE_AFTER_TIME_S;
   CHECK_EVENT(.count = 4, .item_id = item->header.id, .num_concurrent = 0,
-              .timeout_ms = timeout_s * MS_PER_SECOND,
+              .timeout_ms = timeout_s * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_ShowStarted, .is_first_event = true);
   prv_invoke_timer(timeout_s);
   CHECK_NO_EVENTS(.count = 5);
@@ -646,17 +645,17 @@ void test_timeline_peek_event__one_short_event_lifecycle(void) {
   ADD_EVENT(.item = item);
   unsigned int timeout_s = item->header.timestamp - TIMELINE_PEEK_DEFAULT_SHOW_BEFORE_TIME_S;
   CHECK_EVENT(.count = 2, .item_id = item->header.id, .num_concurrent = 0,
-              .timeout_ms = timeout_s * MS_PER_SECOND,
+              .timeout_ms = timeout_s * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_SomeTimeNext, .is_first_event = true);
   prv_invoke_timer(timeout_s);
   timeout_s = TIMELINE_PEEK_DEFAULT_SHOW_BEFORE_TIME_S;
   CHECK_EVENT(.count = 3, .item_id = item->header.id, .num_concurrent = 0,
-              .timeout_ms = timeout_s * MS_PER_SECOND,
+              .timeout_ms = timeout_s * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_ShowWillStart, .is_first_event = true);
   prv_invoke_timer(timeout_s);
-  timeout_s = item->header.duration * SECONDS_PER_MINUTE;
+  timeout_s = item->header.duration * PBL_SEC_PER_MIN;
   CHECK_EVENT(.count = 4, .item_id = item->header.id, .num_concurrent = 0,
-              .timeout_ms = timeout_s * MS_PER_SECOND,
+              .timeout_ms = timeout_s * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_ShowStarted, .is_first_event = true);
   prv_invoke_timer(timeout_s);
   CHECK_NO_EVENTS(.count = 5);
@@ -668,12 +667,12 @@ void test_timeline_peek_event__0_duration_event_lifecycle(void) {
   ADD_EVENT(.item = item);
   unsigned int timeout_s = item->header.timestamp - TIMELINE_PEEK_DEFAULT_SHOW_BEFORE_TIME_S;
   CHECK_EVENT(.count = 2, .item_id = item->header.id, .num_concurrent = 0,
-              .timeout_ms = timeout_s * MS_PER_SECOND,
+              .timeout_ms = timeout_s * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_SomeTimeNext, .is_first_event = true);
   prv_invoke_timer(timeout_s);
   timeout_s = TIMELINE_PEEK_DEFAULT_SHOW_BEFORE_TIME_S;
   CHECK_EVENT(.count = 3, .item_id = item->header.id, .num_concurrent = 0,
-              .timeout_ms = timeout_s * MS_PER_SECOND,
+              .timeout_ms = timeout_s * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_ShowWillStart, .is_first_event = true);
   prv_invoke_timer(timeout_s);
   CHECK_NO_EVENTS(.count = 4);
@@ -687,23 +686,23 @@ void test_timeline_peek_event__one_recurring_event_lifecycle(void) {
   ADD_EVENT(.item = &s_recurring_calendar_item3);
   unsigned int timeout_s = item->header.timestamp - TIMELINE_PEEK_DEFAULT_SHOW_BEFORE_TIME_S;
   CHECK_EVENT(.count = 4, .item_id = item->header.id, .num_concurrent = 0,
-              .timeout_ms = timeout_s * MS_PER_SECOND,
+              .timeout_ms = timeout_s * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_SomeTimeNext, .is_first_event = true);
   prv_invoke_timer(timeout_s);
   timeout_s = TIMELINE_PEEK_DEFAULT_SHOW_BEFORE_TIME_S;
   CHECK_EVENT(.count = 5, .item_id = item->header.id, .num_concurrent = 0,
-              .timeout_ms = timeout_s * MS_PER_SECOND,
+              .timeout_ms = timeout_s * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_ShowWillStart, .is_first_event = true);
   prv_invoke_timer(timeout_s);
   timeout_s = TIMELINE_PEEK_HIDE_AFTER_TIME_S;
   CHECK_EVENT(.count = 6, .item_id = item->header.id, .num_concurrent = 0,
-              .timeout_ms = timeout_s * MS_PER_SECOND,
+              .timeout_ms = timeout_s * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_ShowStarted, .is_first_event = true);
   prv_invoke_timer(timeout_s);
-  timeout_s = (SECONDS_PER_DAY - TIMELINE_PEEK_DEFAULT_SHOW_BEFORE_TIME_S -
+  timeout_s = (PBL_SEC_PER_DAY - TIMELINE_PEEK_DEFAULT_SHOW_BEFORE_TIME_S -
                TIMELINE_PEEK_HIDE_AFTER_TIME_S);
   CHECK_EVENT(.count = 7, .item_id = s_recurring_calendar_item3.header.id, .num_concurrent = 0,
-              .timeout_ms = timeout_s * MS_PER_SECOND,
+              .timeout_ms = timeout_s * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_SomeTimeNext);
 }
 
@@ -714,46 +713,46 @@ void test_timeline_peek_event__two_back_to_back_events(void) {
   ADD_EVENT(.item = &s_back_to_back_calendar_item2);
   unsigned int timeout_s = item->header.timestamp - TIMELINE_PEEK_DEFAULT_SHOW_BEFORE_TIME_S;
   CHECK_EVENT(.count = 3, .item_id = item->header.id, .num_concurrent = 0,
-              .timeout_ms = timeout_s * MS_PER_SECOND,
+              .timeout_ms = timeout_s * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_SomeTimeNext, .is_first_event = true);
   prv_invoke_timer(timeout_s);
   timeout_s = TIMELINE_PEEK_DEFAULT_SHOW_BEFORE_TIME_S;
   CHECK_EVENT(.count = 4, .item_id = item->header.id, .num_concurrent = 0,
-              .timeout_ms = timeout_s * MS_PER_SECOND,
+              .timeout_ms = timeout_s * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_ShowWillStart, .is_first_event = true);
   prv_invoke_timer(timeout_s);
   timeout_s = TIMELINE_PEEK_HIDE_AFTER_TIME_S;
   CHECK_EVENT(.count = 5, .item_id = item->header.id, .num_concurrent = 0,
-              .timeout_ms = timeout_s * MS_PER_SECOND,
+              .timeout_ms = timeout_s * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_ShowStarted, .is_first_event = true);
   prv_invoke_timer(timeout_s);
   item = &s_back_to_back_calendar_item2;
   CHECK_EVENT(.count = 6, .item_id = item->header.id, .num_concurrent = 0,
-              .timeout_ms = timeout_s * MS_PER_SECOND,
+              .timeout_ms = timeout_s * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_SomeTimeNext);
 }
 
 void test_timeline_peek_event__one_persistent_event_lifecycle(void) {
-  TimelineItem item = DEFINE_EVENT(.id = 0x01, .timestamp = 20 * SECONDS_PER_MINUTE, .duration = 30,
+  TimelineItem item = DEFINE_EVENT(.id = 0x01, .timestamp = 20 * PBL_SEC_PER_MIN, .duration = 30,
                                    .persistent = true);
   unsigned int timeout_s = item.header.timestamp - TIMELINE_PEEK_DEFAULT_SHOW_BEFORE_TIME_S;
   CHECK_EVENT(.count = 2, .item_id = item.header.id, .num_concurrent = 0,
-              .timeout_ms = timeout_s * MS_PER_SECOND,
+              .timeout_ms = timeout_s * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_SomeTimeNext, .is_first_event = true);
   prv_invoke_timer(timeout_s);
   timeout_s = TIMELINE_PEEK_DEFAULT_SHOW_BEFORE_TIME_S;
   CHECK_EVENT(.count = 3, .item_id = item.header.id, .num_concurrent = 0,
-              .timeout_ms = timeout_s * MS_PER_SECOND,
+              .timeout_ms = timeout_s * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_ShowWillStart, .is_first_event = true);
   prv_invoke_timer(timeout_s);
   timeout_s = TIMELINE_PEEK_HIDE_AFTER_TIME_S;
   CHECK_EVENT(.count = 4, .item_id = item.header.id, .num_concurrent = 0,
-              .timeout_ms = timeout_s * MS_PER_SECOND,
+              .timeout_ms = timeout_s * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_ShowStarted, .is_first_event = true);
   prv_invoke_timer(timeout_s);
-  timeout_s = item.header.duration * SECONDS_PER_MINUTE - TIMELINE_PEEK_HIDE_AFTER_TIME_S;
+  timeout_s = item.header.duration * PBL_SEC_PER_MIN - TIMELINE_PEEK_HIDE_AFTER_TIME_S;
   CHECK_EVENT(.count = 5, .item_id = item.header.id, .num_concurrent = 0,
-              .timeout_ms = timeout_s * MS_PER_SECOND,
+              .timeout_ms = timeout_s * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_ShowStarted, .is_first_event = true);
   prv_invoke_timer(timeout_s);
   // The peek fires at exactly the persistent event's end time. prv_show_event() in the future
@@ -765,28 +764,27 @@ void test_timeline_peek_event__one_persistent_event_lifecycle(void) {
 }
 
 void test_timeline_peek_event__upcoming_prioritized_over_persistent_event_lifecycle(void) {
-  TimelineItem item = DEFINE_EVENT(.id = 0x01, .timestamp = 20 * SECONDS_PER_MINUTE, .duration = 70,
+  TimelineItem item = DEFINE_EVENT(.id = 0x01, .timestamp = 20 * PBL_SEC_PER_MIN, .duration = 70,
                                    .persistent = true);
-  TimelineItem item2 =
-      DEFINE_EVENT(.id = 0x02, .timestamp = 50 * SECONDS_PER_MINUTE, .duration = 30);
+  TimelineItem item2 = DEFINE_EVENT(.id = 0x02, .timestamp = 50 * PBL_SEC_PER_MIN, .duration = 30);
   unsigned int timeout_s = item.header.timestamp - TIMELINE_PEEK_DEFAULT_SHOW_BEFORE_TIME_S;
   CHECK_EVENT(.count = 3, .item_id = item.header.id, .num_concurrent = 0,
-              .timeout_ms = timeout_s * MS_PER_SECOND,
+              .timeout_ms = timeout_s * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_SomeTimeNext, .is_first_event = true);
   prv_invoke_timer(timeout_s);
   timeout_s = TIMELINE_PEEK_DEFAULT_SHOW_BEFORE_TIME_S;
   CHECK_EVENT(.count = 4, .item_id = item.header.id, .num_concurrent = 0,
-              .timeout_ms = timeout_s * MS_PER_SECOND,
+              .timeout_ms = timeout_s * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_ShowWillStart, .is_first_event = true);
   prv_invoke_timer(timeout_s);
   timeout_s = TIMELINE_PEEK_HIDE_AFTER_TIME_S;
   CHECK_EVENT(.count = 5, .item_id = item.header.id, .num_concurrent = 0,
-              .timeout_ms = timeout_s * MS_PER_SECOND,
+              .timeout_ms = timeout_s * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_ShowStarted, .is_first_event = true);
   prv_invoke_timer(timeout_s);
-  timeout_s = 10 * SECONDS_PER_MINUTE; // time until the next event
+  timeout_s = 10 * PBL_SEC_PER_MIN; // time until the next event
   CHECK_EVENT(.count = 6, .item_id = item.header.id, .num_concurrent = 0,
-              .timeout_ms = timeout_s * MS_PER_SECOND,
+              .timeout_ms = timeout_s * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_ShowStarted, .is_first_event = true);
   prv_invoke_timer(timeout_s);
   timeout_s = TIMELINE_PEEK_DEFAULT_SHOW_BEFORE_TIME_S;
@@ -796,21 +794,21 @@ void test_timeline_peek_event__upcoming_prioritized_over_persistent_event_lifecy
   // timestamp and is still within its peeking window, so item1 remains the first event and the
   // peek for item2 reports is_first_event == false.
   CHECK_EVENT(.count = 7, .item_id = item2.header.id, .num_concurrent = 1,
-              .timeout_ms = timeout_s * MS_PER_SECOND,
+              .timeout_ms = timeout_s * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_ShowWillStart, .is_first_event = false);
   prv_invoke_timer(timeout_s);
   timeout_s = TIMELINE_PEEK_HIDE_AFTER_TIME_S;
   // item2 is still the displayed peek while the persistent item1 remains the earliest future
   // event, so is_first_event stays false (see the count == 7 note above).
   CHECK_EVENT(.count = 8, .item_id = item2.header.id, .num_concurrent = 1,
-              .timeout_ms = timeout_s * MS_PER_SECOND,
+              .timeout_ms = timeout_s * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_ShowStarted, .is_first_event = false);
   prv_invoke_timer(timeout_s);
-  timeout_s = 30 * SECONDS_PER_MINUTE; // time until persistent event ends
+  timeout_s = 30 * PBL_SEC_PER_MIN; // time until persistent event ends
   // item2 has finished; the persistent item1 is again the only (and earliest) event being shown,
   // so is_first_event is true here.
   CHECK_EVENT(.count = 9, .item_id = item.header.id, .num_concurrent = 0,
-              .timeout_ms = timeout_s * MS_PER_SECOND,
+              .timeout_ms = timeout_s * PBL_MSEC_PER_SEC,
               .time_type = TimelinePeekTimeType_ShowStarted, .is_first_event = true);
   prv_invoke_timer(timeout_s);
   // Fires at exactly the persistent event's end time, where the inclusive future boundary still

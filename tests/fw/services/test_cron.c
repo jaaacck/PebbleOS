@@ -11,6 +11,8 @@
 #include "stubs_mutex.h"
 #include "stubs_passert.h"
 #include "fake_rtc.h"
+#include "pbl/services/time.h"
+#include "pbl/util/units.h"
 
 static uint32_t s_timer_timeout_ms;
 
@@ -90,7 +92,8 @@ void test_cron__timer_aligned_to_execute_second(void) {
   const time_t execute_time = pbl_cron_job_schedule(&job);
 
   cl_assert_equal_i(execute_time, 1447332300);
-  cl_assert_equal_i(s_timer_timeout_ms, 603250);
+  // 603250 ms away, aimed early by 1/256 plus the margin.
+  cl_assert_equal_i(s_timer_timeout_ms, 603250 - 603250 / 256 + 10);
   cl_assert(pbl_cron_job_unschedule(&job));
 }
 
@@ -359,7 +362,7 @@ void test_cron__already_elapsed(void) {
     .may_be_instant = true,
   };
 
-  prv_basic_test(&s_timezone_gmt, &test_cron, s_2015_nov12_123456_gmt, 0, SECONDS_PER_MINUTE, 0);
+  prv_basic_test(&s_timezone_gmt, &test_cron, s_2015_nov12_123456_gmt, 0, PBL_SEC_PER_MIN, 0);
 }
 
 struct {
@@ -513,7 +516,7 @@ void test_cron__simples(void) {
     // DST off
     prv_basic_test(&s_timezone_gmt, &test_cron, base, advance, advance, 0);
     // DST on
-    base -= SECONDS_PER_HOUR;
+    base -= PBL_SEC_PER_HOUR;
     prv_basic_test(&s_timezone_gmt, &test_cron, base, advance, advance, 2);
   }
 }
@@ -688,7 +691,7 @@ void test_cron__scheduled_after(void) {
   cl_assert_equal_i((uintptr_t)new_job.cb_data, 2);
   cl_assert_equal_i(pbl_cron_get_job_count(), 6);
 
-  fake_rtc_increment_time(SECONDS_PER_DAY * 60);
+  fake_rtc_increment_time(PBL_SEC_PER_DAY * 60);
   pbl_cron_wakeup();
   cl_assert_equal_i(pbl_cron_get_job_count(), 0);
 }
@@ -702,13 +705,13 @@ void test_cron__offset_negative_seconds_one_wday(void) {
     .hour = 0,
     .mday = PBL_CRON_MDAY_ANY,
     .month = PBL_CRON_MONTH_ANY,
-    .offset_seconds = -SECONDS_PER_DAY,
+    .offset_seconds = -PBL_SEC_PER_DAY,
 
     .wday = PBL_CRON_WDAY_FRIDAY,
     .may_be_instant = false,
   };
 
-  const time_t advance = 30 * SECONDS_PER_MINUTE;
+  const time_t advance = 30 * PBL_SEC_PER_MIN;
   prv_basic_test(&s_timezone_gmt, &test_cron, s_2015_nov12_000000_gmt, advance, advance, 1);
 }
 
@@ -721,12 +724,12 @@ void test_cron__offset_negative_seconds_any_day(void) {
     .hour = 0,
     .mday = PBL_CRON_MDAY_ANY,
     .month = PBL_CRON_MONTH_ANY,
-    .offset_seconds = -SECONDS_PER_DAY,
+    .offset_seconds = -PBL_SEC_PER_DAY,
 
     .may_be_instant = false,
   };
 
-  const time_t advance = 30 * SECONDS_PER_MINUTE;
+  const time_t advance = 30 * PBL_SEC_PER_MIN;
   prv_basic_test(&s_timezone_gmt, &test_cron, s_2015_nov12_000000_gmt, advance, advance, 1);
 }
 
@@ -739,13 +742,13 @@ void test_cron__offset_positive_seconds_one_wday(void) {
     .hour = 0,
     .mday = PBL_CRON_MDAY_ANY,
     .month = PBL_CRON_MONTH_ANY,
-    .offset_seconds = SECONDS_PER_DAY,
+    .offset_seconds = PBL_SEC_PER_DAY,
 
     .wday = PBL_CRON_WDAY_THURSDAY,
     .may_be_instant = false,
   };
 
-  const time_t advance = 30 * SECONDS_PER_MINUTE + SECONDS_PER_DAY;
+  const time_t advance = 30 * PBL_SEC_PER_MIN + PBL_SEC_PER_DAY;
   prv_basic_test(&s_timezone_gmt, &test_cron, s_2015_nov12_000000_gmt, advance, advance, 1);
 }
 
@@ -758,12 +761,12 @@ void test_cron__offset_positive_seconds_any_day(void) {
     .hour = 0,
     .mday = PBL_CRON_MDAY_ANY,
     .month = PBL_CRON_MONTH_ANY,
-    .offset_seconds = SECONDS_PER_DAY,
+    .offset_seconds = PBL_SEC_PER_DAY,
 
     .may_be_instant = false,
   };
 
-  const time_t advance = 30 * SECONDS_PER_MINUTE;
+  const time_t advance = 30 * PBL_SEC_PER_MIN;
   prv_basic_test(&s_timezone_gmt, &test_cron, s_2015_nov12_000000_gmt, advance, advance, 1);
 }
 
@@ -776,7 +779,7 @@ void test_cron__offset_negative_seconds_every_second(void) {
     .hour = PBL_CRON_HOUR_ANY,
     .mday = PBL_CRON_MDAY_ANY,
     .month = PBL_CRON_MONTH_ANY,
-    .offset_seconds = -SECONDS_PER_MINUTE,
+    .offset_seconds = -PBL_SEC_PER_MIN,
 
     .may_be_instant = true,
   };
@@ -793,7 +796,7 @@ void test_cron__offset_positive_seconds_every_second(void) {
     .hour = PBL_CRON_HOUR_ANY,
     .mday = PBL_CRON_MDAY_ANY,
     .month = PBL_CRON_MONTH_ANY,
-    .offset_seconds = SECONDS_PER_MINUTE,
+    .offset_seconds = PBL_SEC_PER_MIN,
 
     .may_be_instant = true,
   };
@@ -810,12 +813,12 @@ void test_cron__offset_negative_seconds_any_day_dst(void) {
     .hour = 1,
     .mday = PBL_CRON_MDAY_ANY,
     .month = PBL_CRON_MONTH_ANY,
-    .offset_seconds = -30 * SECONDS_PER_MINUTE,
+    .offset_seconds = -30 * PBL_SEC_PER_MIN,
 
     .may_be_instant = false,
   };
 
-  const time_t advance = SECONDS_PER_DAY;
+  const time_t advance = PBL_SEC_PER_DAY;
   prv_basic_test(&s_timezone_gmt, &test_cron, s_2015_nov12_000000_gmt, advance, advance, 2);
 }
 
@@ -828,11 +831,107 @@ void test_cron__offset_positive_seconds_any_day_dst(void) {
     .hour = 0,
     .mday = PBL_CRON_MDAY_ANY,
     .month = PBL_CRON_MONTH_ANY,
-    .offset_seconds = 30 * SECONDS_PER_MINUTE,
+    .offset_seconds = 30 * PBL_SEC_PER_MIN,
 
     .may_be_instant = false,
   };
 
-  const time_t advance = SECONDS_PER_DAY;
+  const time_t advance = PBL_SEC_PER_DAY;
   prv_basic_test(&s_timezone_gmt, &test_cron, s_2015_nov12_000000_gmt, advance, advance, 2);
+}
+
+static const TimezoneInfo s_timezone_plus_one = {
+  .tm_zone = "CET",
+  .dst_id = 0,
+  .timezone_id = 1,
+  .tm_gmtoff = 3600,
+  .dst_start = 0,
+  .dst_end = 0,
+};
+
+void test_cron__schedule_at_fires_at_the_time(void) {
+  struct pbl_cron_job job = {.cb = prv_cron_callback};
+  prv_set_rtc(s_2015_nov12_123456_gmt, &s_timezone_gmt);
+
+  pbl_cron_job_schedule_at(&job, s_2015_nov12_123456_gmt + 100);
+  cl_assert_equal_i(job.cached_execute_time, s_2015_nov12_123456_gmt + 100);
+  cl_assert_equal_i(s_timer_timeout_ms, 100000 - 100000 / 256 + 10);
+
+  // The timer expiring early re-arms for what is left.
+  fake_rtc_increment_time(99);
+  pbl_cron_wakeup();
+  cl_assert_equal_i((uintptr_t)job.cb_data, 0);
+  cl_assert_equal_i(s_timer_timeout_ms, 1000 - 1000 / 256 + 10);
+
+  fake_rtc_increment_time(1);
+  pbl_cron_wakeup();
+  cl_assert_equal_i((uintptr_t)job.cb_data, 1);
+  cl_assert_equal_i(pbl_cron_get_job_count(), 0);
+}
+
+void test_cron__schedule_at_ignores_time_zone_changes(void) {
+  struct pbl_cron_job job = {.cb = prv_cron_callback};
+  prv_set_rtc(s_2015_nov12_123456_gmt, &s_timezone_plus_one);
+
+  pbl_cron_job_schedule_at(&job, s_2015_nov12_123456_gmt + 3600);
+  prv_clock_change(0, -3600, true);
+  cl_assert_equal_i(job.cached_execute_time, s_2015_nov12_123456_gmt + 3600);
+  cl_assert_equal_i(pbl_cron_get_job_count(), 1);
+}
+
+void test_cron__schedule_at_runs_when_the_clock_passes_it(void) {
+  struct pbl_cron_job job = {.cb = prv_cron_callback};
+  prv_set_rtc(s_2015_nov12_123456_gmt, &s_timezone_gmt);
+
+  pbl_cron_job_schedule_at(&job, s_2015_nov12_123456_gmt + 3600);
+  prv_clock_change(2 * 3600, 0, false);
+  cl_assert_equal_i((uintptr_t)job.cb_data, 1);
+  cl_assert_equal_i(pbl_cron_get_job_count(), 0);
+}
+
+void test_cron__schedule_at_reschedules(void) {
+  struct pbl_cron_job late = {.cb = prv_cron_callback};
+  struct pbl_cron_job job = {.cb = prv_cron_callback};
+  prv_set_rtc(s_2015_nov12_123456_gmt, &s_timezone_gmt);
+
+  pbl_cron_job_schedule_at(&late, s_2015_nov12_123456_gmt + 50);
+  pbl_cron_job_schedule_at(&job, s_2015_nov12_123456_gmt + 100);
+  pbl_cron_job_schedule_at(&job, s_2015_nov12_123456_gmt + 10);
+  cl_assert_equal_i(pbl_cron_get_job_count(), 2);
+  cl_assert_equal_i(pbl_cron_get_next_execute_time(), s_2015_nov12_123456_gmt + 10);
+
+  fake_rtc_increment_time(10);
+  pbl_cron_wakeup();
+  cl_assert_equal_i((uintptr_t)job.cb_data, 1);
+  cl_assert_equal_i((uintptr_t)late.cb_data, 0);
+  cl_assert(pbl_cron_job_unschedule(&late));
+}
+
+void test_cron__clock_correction_runs_due_jobs(void) {
+  struct pbl_cron_job job = {.cb = prv_cron_callback};
+  prv_set_rtc(s_2015_nov12_123456_gmt, &s_timezone_gmt);
+
+  pbl_cron_job_schedule_at(&job, s_2015_nov12_123456_gmt + 5);
+  rtc_set_time(rtc_get_time() + 10);
+  pbl_cron_handle_clock_correction();
+  cl_assert_equal_i((uintptr_t)job.cb_data, 1);
+  cl_assert_equal_i(pbl_cron_get_job_count(), 0);
+}
+
+void test_cron__clock_correction_keeps_execute_times(void) {
+  struct pbl_cron_job job = {
+    .cb = prv_cron_callback,
+    .minute = 45,
+    .hour = PBL_CRON_HOUR_ANY,
+    .mday = PBL_CRON_MDAY_ANY,
+    .month = PBL_CRON_MONTH_ANY,
+  };
+  prv_set_rtc(s_2015_nov12_123456_gmt, &s_timezone_gmt);
+
+  const time_t execute_time = pbl_cron_job_schedule(&job);
+  rtc_set_time(rtc_get_time() + 10);
+  pbl_cron_handle_clock_correction();
+  cl_assert_equal_i(job.cached_execute_time, execute_time);
+  cl_assert_equal_i((uintptr_t)job.cb_data, 0);
+  cl_assert(pbl_cron_job_unschedule(&job));
 }

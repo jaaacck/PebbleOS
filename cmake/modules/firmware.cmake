@@ -97,9 +97,22 @@ function(pbl_link_firmware)
 
   set(artifacts ${hex} ${bin})
 
+  set(syscalls_stamp ${PROJECT_BINARY_DIR}/pebbleos.syscalls)
+  add_custom_command(
+    OUTPUT ${syscalls_stamp}
+    COMMAND ${PBL_TOOLCHAIN_ENV} ${PYTHON_EXECUTABLE} ${PBL_FIRMWARE_PY} check-syscalls
+            --elf ${elf} --objdump ${CMAKE_OBJDUMP}
+    COMMAND ${CMAKE_COMMAND} -E touch ${syscalls_stamp}
+    DEPENDS pebbleos ${PBL_FIRMWARE_PY}
+    WORKING_DIRECTORY ${PBL_BASE}
+    COMMENT "Checking syscall privilege checks"
+    VERBATIM
+  )
+  list(APPEND artifacts ${syscalls_stamp})
+
   # Hashed log strings: the dictionary the console and the bundle use to
   # turn hashes back into messages.
-  set(loghash ${PROJECT_BINARY_DIR}/src/fw/loghash_dict.json)
+  set(loghash ${PROJECT_BINARY_DIR}/fw/loghash_dict.json)
   if(CONFIG_LOG_HASHED)
     set(fw_loghash ${PROJECT_BINARY_DIR}/pebbleos_loghash_dict.json)
     add_custom_command(
@@ -165,6 +178,31 @@ function(pbl_link_firmware)
     COMMENT "Bundling firmware"
     VERBATIM
   )
+
+  # --- Software bill of materials ----------------------------------------
+
+  # Built on request only: it reads ninja's dependency logs, so it needs
+  # the Ninja generator.
+  if(CMAKE_GENERATOR MATCHES "Ninja")
+    get_filename_component(toolchain_root ${CMAKE_C_COMPILER} DIRECTORY)
+    get_filename_component(toolchain_root ${toolchain_root} DIRECTORY)
+    add_custom_target(sbom
+      COMMAND ${PBL_TOOLCHAIN_ENV} ${PYTHON_EXECUTABLE} ${PBL_BASE}/tools/cmake/sbom.py generate
+              --ninja ${CMAKE_MAKE_PROGRAM}
+              --build-dir ${PROJECT_BINARY_DIR}
+              --target pebbleos.elf
+              --image ${bin}
+              --board ${PBL_BOARD_NORMALIZED}
+              --variant ${VARIANT}
+              --toolchain-root ${toolchain_root}
+              --compiler-version ${CMAKE_C_COMPILER_VERSION}
+              --output ${PROJECT_BINARY_DIR}/pebbleos.cdx.json
+      DEPENDS pbl_firmware
+      WORKING_DIRECTORY ${PBL_BASE}
+      COMMENT "Generating the software bill of materials"
+      VERBATIM
+    )
+  endif()
 
   # --- QEMU flash images --------------------------------------------------
 

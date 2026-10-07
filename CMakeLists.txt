@@ -68,6 +68,7 @@ include(compiler)
 include(libc)
 include(linker)
 include(gettext)
+include(nanopb)
 include(resources)
 include(native_sdk)
 include(sdk)
@@ -82,6 +83,24 @@ add_custom_target(pbl_generated_headers)
 
 # FIXME: remove include/pbl once all modules use the prefix
 pbl_include_directories(include include/pbl)
+pbl_include_directories(${CMAKE_BINARY_DIR}/generated/include)
+
+# The firmware reports the version it was built from.
+set(version_h ${CMAKE_BINARY_DIR}/generated/include/pbl/version.h)
+add_custom_command(
+  OUTPUT ${version_h} ${CMAKE_BINARY_DIR}/generated/version.stamp
+  COMMAND ${PBL_TOOLCHAIN_ENV} ${PYTHON_EXECUTABLE} ${PBL_BASE}/tools/cmake/generate.py version
+          --template ${PBL_BASE}/include/pbl/version.h.in
+          --output ${version_h}
+  DEPENDS ${PBL_BASE}/include/pbl/version.h.in
+  WORKING_DIRECTORY ${PBL_BASE}
+  COMMENT "Checking the firmware version"
+  VERBATIM
+)
+# The stamp is never written, so the version is re-checked on every build;
+# the header itself is only rewritten when it actually changes.
+add_custom_target(pbl_version DEPENDS ${version_h})
+add_dependencies(pbl_generated_headers pbl_version)
 
 # The recovery firmware has no third-party apps, so it needs neither the
 # SDK shims nor the stored apps.
@@ -97,7 +116,8 @@ add_subdirectory(lib)
 add_subdirectory(kernel)
 add_subdirectory(soc)
 add_subdirectory(subsys)
-add_subdirectory(src)
+add_subdirectory(drivers)
+add_subdirectory(fw)
 if(NOT CONFIG_RECOVERY_FW)
   add_subdirectory(apps/stored)
 endif()

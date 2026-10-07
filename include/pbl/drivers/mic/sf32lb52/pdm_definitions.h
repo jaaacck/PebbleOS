@@ -11,13 +11,23 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+/**
+ * @defgroup drivers_mic_sf32lb52 SF32LB52 PDM microphone
+ * @ingroup drivers_mic
+ * @brief @ref drivers_mic implementation for the SF32LB52 PDM peripheral.
+ * @{
+ */
+
+/** @cond INTERNAL_HIDDEN */
 typedef struct MicState {
   uint8_t *circ_buffer_storage;
   CircularBuffer circ_buffer;
   DMA_HandleTypeDef hdma;
-  //! Raw (unaligned) pointer returned by kernel_malloc for the PDM DMA buffer.
-  //! hpdm->pRxBuffPtr is bumped up to a cache-line boundary so the CPU can
-  //! invalidate it without clobbering adjacent dirty data.
+  /**
+   * Raw (unaligned) pointer returned by kernel_malloc for the PDM DMA buffer.
+   * hpdm->pRxBuffPtr is bumped up to a cache-line boundary so the CPU can
+   * invalidate it without clobbering adjacent dirty data.
+   */
   uint8_t *raw_dma_buffer;
 
   // User interface
@@ -49,21 +59,44 @@ typedef struct MicState {
   struct pbl_mutex mutex;
   PDM_HandleTypeDef *hpdm;
 } MicDeviceState;
+/** @endcond */
 
+/** @brief SF32LB52 PDM microphone device. */
 typedef const struct MicDevice {
+  /** Driver runtime state. */
   MicDeviceState *state;
+  /** PDM instance. */
   PDM_TypeDef *pdm_instance;
+  /** PDM interrupt. */
   IRQn_Type pdm_irq;
-  uint32_t pdm_irq_priority;
+  /** PDM DMA interrupt. */
   IRQn_Type pdm_dma_irq;
+  /** PDM clock pin. */
   Pinmux clk_gpio;
+  /** PDM data pin. */
   Pinmux data_gpio;
+  /** Number of channels, 1 or 2. */
   uint32_t channels;
+  /** PDM sample rate in Hz. */
   uint32_t sample_rate;
+  /** PDM channel depth in bits. */
   uint32_t channel_depth;
-  // Volume scalar (max 128)
+  /** Default volume scalar (max 128); not used by the driver. */
   uint16_t default_volume;
 } MicDevice;
 
+/**
+ * @brief PDM interrupt handler.
+ *
+ * @param this Microphone device.
+ */
 extern void pdm1_data_handler(MicDevice *this);
+
+/**
+ * @brief PDM DMA interrupt handler.
+ *
+ * @param this Microphone device.
+ */
 extern void pdm1_l_dma_handler(MicDevice *this);
+
+/** @} */

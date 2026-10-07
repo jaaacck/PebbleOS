@@ -63,6 +63,35 @@ void test_string__test_concat_str_int(void) {
 
   concat_str_int("res_bank", 255, buf, sizeof(buf));
   cl_assert_equal_s(buf, "res_bank255");
+
+  concat_str_int("app", UINT32_MAX, buf, sizeof(buf));
+  cl_assert_equal_s(buf, "app4294967295");
+
+  memset(buf, 'x', sizeof(buf));
+  concat_str_int("app", 12345, buf, 6);
+  cl_assert_equal_s(buf, "app12");
+  cl_assert_equal_i(buf[6], 'x');
+}
+
+void test_string__test_safe_strcat(void) {
+  char buf[8];
+
+  memset(buf, 'x', sizeof(buf));
+  strcpy(buf, "ab");
+  safe_strcat(buf, "cd", 6);
+  cl_assert_equal_s(buf, "abcd");
+
+  memset(buf, 'x', sizeof(buf));
+  strcpy(buf, "ab");
+  safe_strcat(buf, "cdefgh", 6);
+  cl_assert_equal_s(buf, "abcde");
+  cl_assert_equal_i(buf[6], 'x');
+
+  memset(buf, 'x', sizeof(buf));
+  strcpy(buf, "abcde");
+  safe_strcat(buf, "f", 6);
+  cl_assert_equal_s(buf, "abcde");
+  cl_assert_equal_i(buf[6], 'x');
 }
 
 void test_string__test_itoa_int(void) {

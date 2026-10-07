@@ -13,7 +13,7 @@
 #include "resource/resource_ids.auto.h"
 #include "pbl/services/timeline/timeline_resources.h"
 #include "shell/system_theme.h"
-#include "util/graphics.h"
+#include "applib/graphics/raw_image.h"
 #include "pbl/util/hash.h"
 #include "pbl/util/math.h"
 #include "pbl/util/size.h"
@@ -163,4 +163,39 @@ void test_expandable_dialog__dismiss_tutorial_portuguese_orphan(void) {
   prv_push_and_render_expandable_dialog(expandable_dialog, num_times_to_scroll_down);
 
   cl_check(gbitmap_pbi_eq(&s_ctx.dest_bitmap, TEST_PBI_FILE));
+}
+
+void test_expandable_dialog__status_bar_keeps_icon_and_content_below_it(void) {
+  ExpandableDialog *expandable_dialog = expandable_dialog_create("Status bar");
+  Dialog *dialog = expandable_dialog_get_dialog(expandable_dialog);
+  dialog_set_icon(dialog, RESOURCE_ID_GENERIC_WARNING_TINY);
+  dialog_set_text(dialog, "Wakeup events occurred.");
+  dialog_show_status_bar_layer(dialog, true);
+  expandable_dialog_set_header(expandable_dialog, "Wakeup");
+
+  prv_push_and_render_expandable_dialog(expandable_dialog, 0);
+
+  cl_assert_equal_i(expandable_dialog->scroll_layer.layer.frame.origin.y, STATUS_BAR_LAYER_HEIGHT);
+  cl_assert_equal_i(dialog->icon_layer.layer.frame.origin.y, PBL_IF_RECT_ELSE(0, 5));
+  cl_assert_equal_i(expandable_dialog->header_layer.layer.frame.origin.y,
+                    dialog->icon_layer.layer.frame.size.h);
+  cl_assert_equal_i(
+      dialog->text_layer.layer.frame.origin.y,
+      dialog->icon_layer.layer.frame.size.h + expandable_dialog->header_layer.layer.frame.size.h);
+  cl_assert_equal_i(
+      scroll_layer_get_content_size(&expandable_dialog->scroll_layer).h,
+      dialog->text_layer.layer.frame.origin.y + dialog->text_layer.layer.frame.size.h + 6);
+}
+
+void test_expandable_dialog__without_status_bar_retains_icon_margin(void) {
+  ExpandableDialog *expandable_dialog = expandable_dialog_create("No status bar");
+  Dialog *dialog = expandable_dialog_get_dialog(expandable_dialog);
+  dialog_set_icon(dialog, RESOURCE_ID_GENERIC_WARNING_TINY);
+  dialog_set_text(dialog, "Wakeup events occurred.");
+
+  prv_push_and_render_expandable_dialog(expandable_dialog, 0);
+
+  cl_assert_equal_i(dialog->icon_layer.layer.frame.origin.y, 16 + PBL_IF_RECT_ELSE(0, 5));
+  cl_assert_equal_i(dialog->text_layer.layer.frame.origin.y,
+                    16 + dialog->icon_layer.layer.frame.size.h);
 }

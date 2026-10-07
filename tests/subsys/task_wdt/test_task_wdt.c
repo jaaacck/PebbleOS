@@ -4,7 +4,6 @@
 #include "clar.h"
 
 #include "pbl/kernel/kernel.h"
-#include "pbl/os/assert.h"
 #include "system/reboot_reason.h"
 #include <pbl/drivers/watchdog.h>
 #include <pbl/task_wdt/task_wdt.h>
@@ -21,13 +20,9 @@
 // The subsystem on the POSIX kernel: time only moves when every thread is
 // blocked, so the watchdog thread's periodic sleep drives the clock.
 
-PBL_NORETURN void os_assertion_failed(const char *filename, int line) {
+PBL_NORETURN void pbl_kernel_assert_failed(const char *filename, int line) {
   fprintf(stderr, "kernel assert at %s:%d\n", filename, line);
   abort();
-}
-
-PBL_NORETURN void os_assertion_failed_lr(const char *filename, int line, uint32_t lr) {
-  os_assertion_failed(filename, line);
 }
 
 void pbl_task_wdt_reset_for_test(void);
@@ -328,4 +323,41 @@ static void prv_exhaust_entry(void *arg) {
 void test_task_wdt__channel_pool_is_bounded(void) {
   prv_spawn(0, "exhaust", prv_exhaust_entry, NULL);
   pbl_test_kernel_run();
+}
+
+static uint32_t s_wait_end_ms;
+
+static void prv_waiting_entry(void *arg) {
+  cl_assert(pbl_task_wdt_add(NULL, TIMEOUT_MS, prv_callback, NULL) >= 0);
+  pbl_task_wdt_set_waiting(true);
+  prv_sleep_ms(10 * TIMEOUT_MS);
+  cl_assert_equal_i(s_callbacks, 0);
+  pbl_task_wdt_set_waiting(false);
+  s_wait_end_ms = prv_now_ms();
+  prv_sleep_ms(60 * 1000);
+}
+
+void test_task_wdt__waiting_channel_does_not_expire(void) {
+  prv_spawn(0, "waiting", prv_waiting_entry, NULL);
+  pbl_test_kernel_run();
+  // Busy since the wait ended without feeding: the timeout restarted there.
+  cl_assert(s_callbacks >= 1);
+  cl_assert(s_first_callback_ms >= s_wait_end_ms + TIMEOUT_MS);
+  cl_assert(s_first_callback_ms < s_wait_end_ms + TIMEOUT_MS + PERIOD_MS);
+  cl_assert(s_reset);
+}
+
+static void prv_waiting_bystander_entry(void *arg) {
+  cl_assert(pbl_task_wdt_add(NULL, TIMEOUT_MS, prv_callback, NULL) >= 0);
+  pbl_task_wdt_set_waiting(true);
+  prv_sleep_ms(60 * 1000);
+}
+
+void test_task_wdt__waiting_is_per_thread(void) {
+  prv_spawn(0, "waiting", prv_waiting_bystander_entry, NULL);
+  prv_spawn(1, "stuck", prv_bystander_entry, NULL);
+  pbl_test_kernel_run();
+  cl_assert(s_reset);
+  cl_assert_equal_i(s_callback_channel, 1);
+  cl_assert_equal_i(s_reason.data8[0], 0x1);
 }
