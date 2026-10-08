@@ -1,35 +1,35 @@
 /* SPDX-FileCopyrightText: 2026 Core Devices LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "clar.h"
+#include <clar.h>
 
-#include "pbl/services/comm_session/session.h"
-#include "pbl/services/filesystem/pfs.h"
-#include "pbl/services/notifications/ancs/ancs_notifications_util.h"
-#include "pbl/services/notifications/pending_dismissals.h"
-#include "pbl/services/system_task.h"
-#include "pbl/util/size.h"
-#include "pbl/util/uuid.h"
+#include <pbl/services/comm_session/session.h>
+#include <pbl/services/filesystem/pfs.h>
+#include <pbl/services/notifications/ancs/ancs_notifications_util.h>
+#include <pbl/services/notifications/pending_dismissals.h>
+#include <pbl/services/system_task.h>
+#include <pbl/util/size.h>
+#include <pbl/util/uuid.h>
 
 #include <string.h>
 
 // Stubs
 ////////////////////////////////////////////////////////////////
-#include "stubs_analytics.h"
-#include "stubs_hexdump.h"
-#include "stubs_logging.h"
-#include "stubs_mutex.h"
-#include "stubs_passert.h"
-#include "stubs_pbl_malloc.h"
-#include "stubs_pebble_tasks.h"
-#include "stubs_rand_ptr.h"
-#include "stubs_sleep.h"
-#include "stubs_task_wdt.h"
+#include <stubs_analytics.h>
+#include <stubs_hexdump.h>
+#include <stubs_logging.h>
+#include <stubs_mutex.h>
+#include <stubs_passert.h>
+#include <stubs_pbl_malloc.h>
+#include <stubs_pebble_tasks.h>
+#include <stubs_rand_ptr.h>
+#include <stubs_sleep.h>
+#include <stubs_task_wdt.h>
 
 // Fakes
 ////////////////////////////////////////////////////////////////
-#include "fake_rtc.h"
-#include "fake_spi_flash.h"
+#include <fake_rtc.h>
+#include <fake_spi_flash.h>
 
 // Notifications from the Notifications data source are dismissed on the phone
 static const Uuid s_phone_source = {0x01};

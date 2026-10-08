@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "comm/ble/kernel_le_client/ancs/ancs_types.h"
+#include <comm/ble/kernel_le_client/ancs/ancs_types.h>
 
 #include <stdbool.h>
 #include <stddef.h>

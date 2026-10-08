@@ -1,38 +1,38 @@
 /* SPDX-FileCopyrightText: 2026 Core Devices LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "clar.h"
+#include <clar.h>
 
-#include "kernel/pbl_malloc.h"
-#include "pbl/services/filesystem/pfs.h"
-#include "pbl/services/notifications/ancs/ancs_notifications_util.h"
-#include "pbl/services/notifications/ancs/ancs_reconcile.h"
-#include "pbl/services/notifications/notification_storage.h"
-#include "pbl/util/size.h"
-#include "pbl/util/uuid.h"
+#include <kernel/pbl_malloc.h>
+#include <pbl/services/filesystem/pfs.h>
+#include <pbl/services/notifications/ancs/ancs_notifications_util.h>
+#include <pbl/services/notifications/ancs/ancs_reconcile.h>
+#include <pbl/services/notifications/notification_storage.h>
+#include <pbl/util/size.h>
+#include <pbl/util/uuid.h>
 
 #include <string.h>
 
 // Stubs
 ////////////////////////////////////////////////////////////////
-#include "stubs_analytics.h"
-#include "stubs_event_loop.h"
-#include "stubs_hexdump.h"
-#include "stubs_layout_layer.h"
-#include "stubs_logging.h"
-#include "stubs_mutex.h"
-#include "stubs_passert.h"
-#include "stubs_pbl_malloc.h"
-#include "stubs_pebble_tasks.h"
-#include "stubs_rand_ptr.h"
-#include "stubs_serial.h"
-#include "stubs_sleep.h"
-#include "stubs_task_wdt.h"
+#include <stubs_analytics.h>
+#include <stubs_event_loop.h>
+#include <stubs_hexdump.h>
+#include <stubs_layout_layer.h>
+#include <stubs_logging.h>
+#include <stubs_mutex.h>
+#include <stubs_passert.h>
+#include <stubs_pbl_malloc.h>
+#include <stubs_pebble_tasks.h>
+#include <stubs_rand_ptr.h>
+#include <stubs_serial.h>
+#include <stubs_sleep.h>
+#include <stubs_task_wdt.h>
 
 // Fakes
 ////////////////////////////////////////////////////////////////
-#include "fake_rtc.h"
-#include "fake_spi_flash.h"
+#include <fake_rtc.h>
+#include <fake_spi_flash.h>
 
 extern void notification_storage_reset(void);
 

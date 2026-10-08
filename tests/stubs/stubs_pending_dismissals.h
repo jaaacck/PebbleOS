@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include "pbl/services/notifications/pending_dismissals.h"
-#include "pbl/kernel/compiler.h"
+#include <pbl/services/notifications/pending_dismissals.h>
+#include <pbl/kernel/compiler.h>
 
 bool PBL_WEAK pending_dismissals_add(const TimelineItem *notification,
                                      const TimelineItemAction *dismiss) {
