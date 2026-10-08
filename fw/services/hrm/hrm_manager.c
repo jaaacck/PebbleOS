@@ -1,28 +1,28 @@
 /* SPDX-FileCopyrightText: 2024 Google LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "pbl/services/hrm/hrm_manager.h"
-#include "pbl/services/hrm/hrm_manager_private.h"
+#include <pbl/services/hrm/hrm_manager.h>
+#include <pbl/services/hrm/hrm_manager_private.h>
 
-#include "applib/health_service.h"
+#include <applib/health_service.h>
 #include <pbl/drivers/hrm.h>
-#include "kernel/events.h"
-#include "kernel/pbl_malloc.h"
-#include "pbl/kernel/types.h"
-#include "pbl/services/analytics/analytics.h"
-#include "pbl/services/system_task.h"
-#include "pbl/services/activity/activity.h"
-#include "syscall/syscall_internal.h"
-#include "system/hexdump.h"
+#include <kernel/events.h>
+#include <kernel/pbl_malloc.h>
+#include <pbl/kernel/types.h>
+#include <pbl/services/analytics/analytics.h>
+#include <pbl/services/system_task.h>
+#include <pbl/services/activity/activity.h>
+#include <syscall/syscall_internal.h>
+#include <system/hexdump.h>
 #include <pbl/logging/logging.h>
-#include "system/passert.h"
-#include "pbl/kernel/compiler.h"
-#include "pbl/util/testing.h"
-#include "pbl/util/math.h"
-#include "pbl/util/size.h"
+#include <system/passert.h>
+#include <pbl/kernel/compiler.h>
+#include <pbl/util/testing.h>
+#include <pbl/util/math.h>
+#include <pbl/util/size.h>
 
 #include <stddef.h>
-#include "pbl/util/units.h"
+#include <pbl/util/units.h>
 
 PBL_LOG_MODULE_DEFINE(service_hrm, CONFIG_SERVICE_HRM_LOG_LEVEL);
 
@@ -49,7 +49,7 @@ static void prv_update_enable_timer_cb(void *context);
 
 static bool prv_match_session_ref(ListNode *found_node, void *data) {
   const HRMSubscriberState *state = (HRMSubscriberState *)found_node;
-  return (state->session_ref == (HRMSessionRef)data);
+  return (state->session_ref == (HRMSessionRef)(uintptr_t)data);
 }
 
 PBL_T_STATIC HRMSubscriberState *prv_get_subscriber_state_from_ref(HRMSessionRef session) {
@@ -468,7 +468,7 @@ static void prv_system_task_hrm_handler(void *context) {
     // without corresponding events, or during concurrent access.
     PBL_LOG_WRN(
         "HRM: system task handler called with no event in buffer "
-        "(available=%u, needed=%u)",
+        "(available=%u, needed=%zu)",
         available_bytes, sizeof(PebbleHRMEvent));
     pbl_mutex_unlock(&s_manager_state.lock);
     return;
@@ -547,54 +547,40 @@ static void prv_queue_system_task_event(const PebbleHRMEvent *event) {
 }
 
 static void prv_populate_hrm_event(PebbleHRMEvent *event, HRMFeature feature, const HRMData *data) {
+  // Zero the whole union, events are copied to apps.
+  memset(event, 0, sizeof(*event));
   switch (feature) {
     case HRMFeature_BPM:
-      *event = (PebbleHRMEvent){
-        .event_type = HRMEvent_BPM,
-        .bpm = {
-          .bpm = data->hrm_bpm,
-          .quality = data->hrm_quality,
-        },
-      };
+      event->event_type = HRMEvent_BPM;
+      event->bpm.bpm = data->hrm_bpm;
+      event->bpm.quality = data->hrm_quality;
       break;
     case HRMFeature_HRV:
-      *event = (PebbleHRMEvent){
-        .event_type = HRMEvent_HRV,
-        .hrv = {
-          .ppi_ms = data->hrv_ppi_ms,
-          .quality = data->hrv_quality,
-        },
-      };
+      event->event_type = HRMEvent_HRV;
+      event->hrv.ppi_ms = data->hrv_ppi_ms;
+      event->hrv.quality = data->hrv_quality;
       break;
     case HRMFeature_SpO2:
-      *event = (PebbleHRMEvent){
-        .event_type = HRMEvent_SpO2,
-        .spo2 = {
-          .percent = data->spo2_percent,
-          .quality = data->spo2_quality,
-          .confidence = data->spo2_confidence,
-          .valid_level = data->spo2_valid_level,
-          .invalid = data->spo2_invalid,
-        },
-      };
+      event->event_type = HRMEvent_SpO2;
+      event->spo2.percent = data->spo2_percent;
+      event->spo2.quality = data->spo2_quality;
+      event->spo2.confidence = data->spo2_confidence;
+      event->spo2.valid_level = data->spo2_valid_level;
+      event->spo2.invalid = data->spo2_invalid;
       break;
 #ifdef CONFIG_MFG
     case HRMFeature_CTR: {
       HRMCTRData *ctr_data = kernel_zalloc_check(sizeof(HRMCTRData));
       memcpy(ctr_data->ctr, data->ctr, sizeof(HRMCTRData));
-      *event = (PebbleHRMEvent){
-        .event_type = HRMEvent_CTR,
-        .ctr = ctr_data,
-      };
+      event->event_type = HRMEvent_CTR;
+      event->ctr = ctr_data;
       break;
     }
     case HRMFeature_Leakage: {
       HRMLeakageData *leakage_data = kernel_zalloc_check(sizeof(HRMLeakageData));
       memcpy(leakage_data->leakage, data->leakage, sizeof(HRMLeakageData));
-      *event = (PebbleHRMEvent){
-        .event_type = HRMEvent_Leakage,
-        .leakage = leakage_data,
-      };
+      event->event_type = HRMEvent_Leakage;
+      event->leakage = leakage_data;
       break;
     }
 #endif

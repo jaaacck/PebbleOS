@@ -1,29 +1,30 @@
 /* SPDX-FileCopyrightText: 2024 Google LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "clar.h"
+#include <clar.h>
 
-#include "applib/ui/vibes.h"
-#include "applib/ui/window_private.h"
-#include "apps/system/launcher/default/menu_layer.h"
-#include "apps/system/launcher/default/menu_layer_private.h"
-#include "shell/prefs.h"
-#include "resource/resource_ids.auto.h"
-#include "pbl/services/app_glances/app_glance_service.h"
-#include "pbl/services/blob_db/app_glance_db.h"
-#include "pbl/util/size.h"
-#include "pbl/util/testing.h"
+#include <applib/ui/vibes.h>
+#include <applib/ui/window_private.h>
+#include <apps/system/launcher/default/menu_layer.h>
+#include <apps/system/launcher/default/menu_layer_private.h>
+#include <shell/prefs.h>
+#include <resource/resource_ids.auto.h>
+#include <pbl/services/app_glances/app_glance_service.h>
+#include <pbl/services/blob_db/app_glance_db.h>
+#include <pbl/util/size.h>
+#include <pbl/util/testing.h>
 
 static GContext s_ctx;
 
 // Fakes
 /////////////////////
 
-#include "fake_content_indicator.h"
-#include "fake_settings_file.h"
-#include "fake_spi_flash.h"
-#include "fixtures/load_test_resources.h"
-#include "pbl/services/timeline/timeline_resources.h"
+#include <fake_content_indicator.h>
+#include <fake_settings_file.h>
+#include <fake_spi_flash.h>
+#include <fixtures/load_test_resources.h>
+#include <fixtures/screen_grid.h>
+#include <pbl/services/timeline/timeline_resources.h>
 
 extern const uint16_t g_timeline_resources[][TimelineResourceSizeCount];
 #define TIMELINE_RESOURCE_TEST_FAKE_PNG (9999 | 0x80000000)
@@ -180,52 +181,53 @@ bool timeline_resources_is_system(TimelineResourceId timeline_id) {
 // Stubs
 /////////////////////
 
-#include "stubs_app_cache.h"
-#include "stubs_alarm.h"
-#include "stubs_alerts.h"
-#include "stubs_analytics.h"
-#include "stubs_app_manager.h"
-#include "stubs_app_window_stack.h"
-#include "stubs_app_timer.h"
-#include "stubs_bluetooth_ctl.h"
-#include "stubs_bootbits.h"
-#include "stubs_click.h"
-#include "stubs_clock.h"
-#include "stubs_do_not_disturb.h"
-#include "stubs_events.h"
-#include "stubs_event_service_client.h"
-#include "stubs_health_util.h"
-#include "stubs_i18n.h"
-#include "stubs_kino_player.h"
-#include "stubs_layer.h"
-#include "stubs_logging.h"
-#include "stubs_memory_layout.h"
-#include "stubs_music.h"
-#include "stubs_mutex.h"
-#include "stubs_notification_storage.h"
-#include "stubs_passert.h"
-#include "stubs_pebble_process_info.h"
-#include "stubs_pebble_tasks.h"
-#include "stubs_pbl_malloc.h"
-#include "stubs_serial.h"
-#include "stubs_session.h"
-#include "stubs_sleep.h"
-#include "stubs_status_bar_layer.h"
-#include "stubs_system_theme.h"
-#include "stubs_syscalls.h"
-#include "stubs_task_wdt.h"
-#include "stubs_tick.h"
-#include "stubs_time.h"
-#include "stubs_watchface.h"
-#include "stubs_weather_service.h"
-#include "stubs_weather_types.h"
-#include "stubs_window_manager.h"
-#include "stubs_window_stack.h"
-#include "stubs_workout_service.h"
-#include "stubs_workout_utils.h"
+#include <stubs_app_cache.h>
+#include <stubs_alarm.h>
+#include <stubs_alerts.h>
+#include <stubs_analytics.h>
+#include <stubs_app_manager.h>
+#include <stubs_app_window_stack.h>
+#include <stubs_app_timer.h>
+#include <stubs_bluetooth_ctl.h>
+#include <stubs_bootbits.h>
+#include <stubs_click.h>
+#include <stubs_clock.h>
+#include <stubs_do_not_disturb.h>
+#include <stubs_events.h>
+#include <stubs_event_service_client.h>
+#include <stubs_health_util.h>
+#include <stubs_i18n.h>
+#include <stubs_kino_player.h>
+#include <stubs_layer.h>
+#include <stubs_logging.h>
+#include <stubs_memory_layout.h>
+#include <stubs_music.h>
+#include <stubs_mutex.h>
+#include <stubs_notification_storage.h>
+#include <stubs_passert.h>
+#include <stubs_pebble_process_info.h>
+#include <stubs_pebble_tasks.h>
+#include <stubs_pbl_malloc.h>
+#include <stubs_serial.h>
+#include <stubs_session.h>
+#include <stubs_sleep.h>
+#include <stubs_status_bar_layer.h>
+#include <stubs_system_theme.h>
+#include <stubs_syscalls.h>
+#include <stubs_task_wdt.h>
+#include <stubs_tick.h>
+#include <stubs_time.h>
+#include <stubs_watchface.h>
+#include <stubs_weather_service.h>
+#include <stubs_weather_types.h>
+#include <stubs_window_manager.h>
+#include <stubs_window_stack.h>
+#include <stubs_workout_service.h>
+#include <stubs_workout_utils.h>
 
 GColor shell_prefs_get_theme_highlight_color(void) {
-  return GColorWhite;
+  // Black and white displays always highlight in black
+  return PBL_IF_COLOR_ELSE(GColorWhite, GColorBlack);
 }
 
 bool alerts_preferences_get_notification_alternative_design(void) {
@@ -348,44 +350,23 @@ void prv_render_launcher_menu_layer(uint16_t selected_index) {
   app_menu_data_source_deinit(&data_source);
 }
 
-#define GRID_CELL_PADDING 5
-
-//! Renders the launcher once per content size and checks the screens side by side, Small to
-//! Extra Large. Pixels outside a round display stay pink.
+//! Renders the launcher once per content size and checks the screens side by side, from Small
 static void prv_render_launcher_menu_layer_for_each_size(uint16_t selected_index,
                                                          const char *pbi_file) {
-  const GSize grid_size = GSize(
-      GRID_CELL_PADDING + NumPreferredContentSizes * (DISP_COLS + GRID_CELL_PADDING), DISP_ROWS);
-  GBitmap *grid = gbitmap_create_blank(grid_size, GBitmapFormat8Bit);
-  memset(grid->addr, GColorShockingPinkARGB8, grid->row_size_bytes * grid_size.h);
-
-  for (PreferredContentSize size = PreferredContentSizeSmall; size < NumPreferredContentSizes;
-       size++) {
+  ScreenGrid grid;
+  screen_grid_init(&grid, 1);
+  for (PreferredContentSize size = grid.first_size; size <= grid.last_size; size++) {
     s_content_size = size;
     framebuffer_clear(fb);
     prv_render_launcher_menu_layer(selected_index);
-
-    uint8_t *column =
-        (uint8_t *)grid->addr + GRID_CELL_PADDING + size * (DISP_COLS + GRID_CELL_PADDING);
-    for (int16_t y = 0; y < DISP_ROWS; y++) {
-      const GBitmapDataRowInfo row = gbitmap_get_data_row_info(&s_ctx.dest_bitmap, y);
-      for (int16_t x = row.min_x; x <= row.max_x; x++) {
-        column[y * grid->row_size_bytes + x] = row.data[x];
-      }
-    }
+    screen_grid_add(&grid, &s_ctx, size, 0);
   }
 
-  cl_check(gbitmap_pbi_eq(grid, pbi_file));
-  gbitmap_destroy(grid);
+  screen_grid_check(&grid, pbi_file);
 }
 
 // Tests
 //////////////////////
-
-void test_launcher_menu_layer__long_title(void) {
-  prv_render_launcher_menu_layer(LauncherMenuLayerTestApp_LongTitle);
-  cl_check(gbitmap_pbi_eq(&s_ctx.dest_bitmap, TEST_PBI_FILE));
-}
 
 void test_launcher_menu_layer__no_icon(void) {
   prv_render_launcher_menu_layer(LauncherMenuLayerTestApp_NoIcon);
@@ -448,26 +429,6 @@ static void prv_insert_glances_for_app_selected_and_apps_above_and_below_with_gl
     cl_assert_equal_i(app_glance_db_insert_glance(&s_fake_app_nodes[i].node.uuid, &glance),
                       S_SUCCESS);
   }
-}
-
-void test_launcher_menu_layer__app_selected_and_apps_above_and_below_with_glances(void) {
-  prv_insert_glances_for_app_selected_and_apps_above_and_below_with_glances_test();
-  prv_render_launcher_menu_layer(LauncherMenuLayerTestApp_InteriorApp);
-  cl_check(gbitmap_pbi_eq(&s_ctx.dest_bitmap, TEST_PBI_FILE));
-}
-
-void test_launcher_menu_layer__extra_large_with_glances(void) {
-  s_content_size = PreferredContentSizeExtraLarge;
-  prv_insert_glances_for_app_selected_and_apps_above_and_below_with_glances_test();
-  prv_render_launcher_menu_layer(LauncherMenuLayerTestApp_InteriorApp);
-  cl_check(gbitmap_pbi_eq(&s_ctx.dest_bitmap, TEST_PBI_FILE));
-}
-
-void test_launcher_menu_layer__medium_with_glances(void) {
-  s_content_size = PreferredContentSizeMedium;
-  prv_insert_glances_for_app_selected_and_apps_above_and_below_with_glances_test();
-  prv_render_launcher_menu_layer(LauncherMenuLayerTestApp_InteriorApp);
-  cl_check(gbitmap_pbi_eq(&s_ctx.dest_bitmap, TEST_PBI_FILE));
 }
 
 void test_launcher_menu_layer__content_size_change_keeps_selection(void) {

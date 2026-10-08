@@ -4,13 +4,13 @@
 #include "touch_service.h"
 #include "touch_service_private.h"
 
-#include "applib/event_service_client.h"
-#include "kernel/events.h"
-#include "kernel/kernel_applib_state.h"
-#include "kernel/pebble_tasks.h"
-#include "process_state/app_state/app_state.h"
-#include "syscall/syscall.h"
-#include "system/passert.h"
+#include <applib/event_service_client.h>
+#include <kernel/events.h>
+#include <kernel/kernel_applib_state.h>
+#include <kernel/pebble_tasks.h>
+#include <process_state/app_state/app_state.h>
+#include <syscall/syscall.h>
+#include <system/passert.h>
 
 //! @return the per-task touch service state, or NULL if the current task is
 //! not permitted to use the touch service (e.g. background workers, or
@@ -39,12 +39,13 @@ static void prv_handle_touch_event(PebbleEvent *e, void *context) {
   if (!state || e->type != PEBBLE_TOUCH_EVENT) {
     return;
   }
+  const TouchEvent touch = e->touch.event;
   // The system slot sees each event first, then the app-facing raw slot.
   if (state->system_handler) {
-    state->system_handler(&e->touch.event, state->system_context);
+    state->system_handler(&touch, state->system_context);
   }
   if (state->raw_handler) {
-    state->raw_handler(&e->touch.event, state->raw_context);
+    state->raw_handler(&touch, state->raw_context);
   }
 }
 

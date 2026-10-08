@@ -1,27 +1,27 @@
 /* SPDX-FileCopyrightText: 2024 Google LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "clar.h"
+#include <clar.h>
 
 // Fakes
 /////////////
-#include "fake_system_task.h"
-#include "fake_regular_timer.h"
-#include "fake_blobdb.h"
+#include <fake_system_task.h>
+#include <fake_regular_timer.h>
+#include <fake_blobdb.h>
+#include <fake_pbl_malloc.h>
 
 // Stubs
 /////////////
-#include "stubs_pbl_malloc.h"
-#include "stubs_logging.h"
-#include "stubs_passert.h"
-#include "stubs_session.h"
+#include <stubs_logging.h>
+#include <stubs_passert.h>
+#include <stubs_session.h>
 
 // FW Includes
 ///////////////
-#include "pbl/services/blob_db/api.h"
-#include "pbl/services/blob_db/util.h"
-#include "pbl/services/blob_db/sync.h"
-#include "pbl/util/size.h"
+#include <pbl/services/blob_db/api.h>
+#include <pbl/services/blob_db/util.h>
+#include <pbl/services/blob_db/sync.h>
+#include <pbl/util/size.h>
 
 // Writebacks counter
 ////////////////////////
@@ -257,7 +257,9 @@ void test_blob_db_sync__sync_while_syncing(void) {
   cl_assert(blob_db_sync_db(BlobDBIdTest) == S_SUCCESS);
 
   // We should throw an error if we get a sync while a db sync in in progress
+  int net_allocs = fake_pbl_malloc_num_net_allocs();
   cl_assert(blob_db_sync_db(BlobDBIdTest) == E_BUSY);
+  cl_assert_equal_i(fake_pbl_malloc_num_net_allocs(), net_allocs);
 
   // Generate some responses so the sync session gets cleaned up
   prv_generate_responses_from_phone();

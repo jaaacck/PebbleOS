@@ -3,21 +3,21 @@
 
 #include "status_bar_layer.h"
 
-#include "applib/app_logging.h"
-#include "applib/applib_malloc.auto.h"
-#include "applib/fonts/fonts.h"
-#include "applib/graphics/framebuffer.h"
-#include "applib/graphics/graphics.h"
-#include "applib/graphics/graphics_line.h"
-#include "applib/graphics/text.h"
-#include "applib/ui/window_stack.h"
-#include "kernel/ui/kernel_ui.h"
-#include "process_state/app_state/app_state.h"
-#include "pbl/services/clock.h"
-#include "syscall/syscall.h"
-#include "system/passert.h"
-#include "pbl/util/math.h"
-#include "pbl/util/string.h"
+#include <applib/app_logging.h>
+#include <applib/applib_malloc.auto.h>
+#include <applib/fonts/fonts.h>
+#include <applib/graphics/framebuffer.h>
+#include <applib/graphics/graphics.h>
+#include <applib/graphics/graphics_line.h>
+#include <applib/graphics/text.h>
+#include <applib/ui/window_stack.h>
+#include <kernel/ui/kernel_ui.h>
+#include <process_state/app_state/app_state.h>
+#include <pbl/services/clock.h>
+#include <syscall/syscall.h>
+#include <system/passert.h>
+#include <pbl/util/math.h>
+#include <pbl/util/string.h>
 
 typedef struct StatusBarTextFormat {
   GTextOverflowMode overflow_mode;
@@ -329,7 +329,8 @@ static void prv_tick_timer_handler_cb(PebbleEvent *e, void *cb_data) {
     return;
   }
   struct tm currtime;
-  sys_localtime_r(&e->clock_tick.tick_time, &currtime);
+  const time_t tick_time = e->clock_tick.tick_time;
+  sys_localtime_r(&tick_time, &currtime);
   const int min_of_day = (currtime.tm_hour * 60) + currtime.tm_min;
   if (status_bar_layer->previous_min_of_day != min_of_day) {
     prv_status_bar_layer_update_clock(status_bar_layer); // update clock text and mark dirty

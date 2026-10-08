@@ -1,14 +1,14 @@
 /* SPDX-FileCopyrightText: 2024 Google LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "system/bootbits.h"
+#include <system/bootbits.h>
 
 #include <pbl/drivers/flash.h>
 #include <pbl/drivers/rtc.h>
-#include "flash_region/flash_region.h"
+#include <flash_region/flash_region.h>
 #include <pbl/logging/logging.h>
-#include "system/version.h"
-#include "pbl/crc/crc.h"
+#include <system/version.h>
+#include <pbl/crc/crc.h>
 
 #ifdef CONFIG_SOC_SF32LB52
 #include <bf0_hal.h>
@@ -16,10 +16,10 @@
 
 #if MICRO_FAMILY_STM32F4
 #include <stm32f4xx.h>
-#include "pbl/kernel/compiler.h"
+#include <pbl/kernel/compiler.h>
 #endif
 
-#ifdef CONFIG_QEMU
+#if defined(CONFIG_QEMU) || defined(CONFIG_SOC_POSIX)
 // Provided by the QEMU RTC driver
 extern void RTC_WriteBackupRegister(uint32_t reg_id, uint32_t value);
 extern uint32_t RTC_ReadBackupRegister(uint32_t reg_id);

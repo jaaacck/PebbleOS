@@ -1,32 +1,32 @@
 /* SPDX-FileCopyrightText: 2024 Google LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "pbl/services/protobuf_log/protobuf_log.h"
-#include "pbl/services/protobuf_log/protobuf_log_private.h"
-#include "pbl/services/protobuf_log/protobuf_log_util.h"
+#include <pbl/services/protobuf_log/protobuf_log.h>
+#include <pbl/services/protobuf_log/protobuf_log_private.h>
+#include <pbl/services/protobuf_log/protobuf_log_util.h>
 
-#include "applib/data_logging.h"
+#include <applib/data_logging.h>
 #include <pbl/drivers/rtc.h>
-#include "kernel/pbl_malloc.h"
-#include "mfg/mfg_serials.h"
-#include "pbl/kernel/mutex.h"
-#include "pb.h"
-#include "pb_encode.h"
-#include "pbl/services/data_logging/data_logging_service.h"
+#include <kernel/pbl_malloc.h>
+#include <mfg/mfg_serials.h>
+#include <pbl/kernel/mutex.h>
+#include <pb.h>
+#include <pb_encode.h>
+#include <pbl/services/data_logging/data_logging_service.h>
 #include <pbl/logging/logging.h>
-#include "system/passert.h"
-#include "system/version.h"
-#include "pbl/util/math.h"
-#include "pbl/services/time.h"
+#include <system/passert.h>
+#include <system/version.h>
+#include <pbl/util/math.h>
+#include <pbl/services/time.h>
 
-#include "pbl/util/uuid.h"
+#include <pbl/util/uuid.h>
 
 #include <string.h>
 
 // These headers auto-generated from the measurements.proto
-#include "event.pb.h"
-#include "measurements.pb.h"
-#include "payload.pb.h"
+#include <event.pb.h>
+#include <measurements.pb.h>
+#include <payload.pb.h>
 
 PBL_LOG_MODULE_DEFINE(service_protobuf_log, CONFIG_SERVICE_PROTOBUF_LOG_LOG_LEVEL);
 
@@ -355,8 +355,8 @@ static bool prv_log_struct(PLogSession *session, uint32_t field_number, const pb
   // If it fits, add it. If it doesn't, flush first.
   if (size_if_added > session->max_data_size) {
     // We would be over capacity if we added this message. Let's flush first.
-    PBL_LOG_DBG("Session: 0x%x - Would have been over limit at size %" PRIu32 ", flushing",
-                (int)session, size_if_added);
+    PBL_LOG_DBG("Session: %p - Would have been over limit at size %" PRIu32 ", flushing", session,
+                size_if_added);
     protobuf_log_session_flush(session);
   }
 
@@ -381,7 +381,7 @@ bool protobuf_log_session_add_measurements(ProtobufLogRef session_ref, time_t sa
   // error check
   PBL_ASSERT(num_values == session->config.measurements.num_types, "Wrong number of values passed");
 
-  PBL_LOG_DBG("Session: 0x%x - Adding measurement sample with %" PRIu32 " values", (int)session_ref,
+  PBL_LOG_DBG("Session: %p - Adding measurement sample with %" PRIu32 " values", session_ref,
               num_values);
 
   // Encode the Measurement
@@ -421,7 +421,7 @@ bool protobuf_log_session_add_event(ProtobufLogRef session_ref, pebble_pipeline_
     .arg = &uuid,
   };
 
-  PBL_LOG_DBG("Session: 0x%x - Adding event with type: %d", (int)session_ref, event->type);
+  PBL_LOG_DBG("Session: %p - Adding event with type: %d", session_ref, event->type);
 
   bool success = prv_log_struct(session, pebble_pipeline_Payload_events_tag,
                                 &pebble_pipeline_Event_msg, event);
@@ -452,7 +452,7 @@ bool protobuf_log_session_flush(ProtobufLogRef session_ref) {
   };
 
   // Send it out now
-  PBL_LOG_DBG("Session: 0x%x - Flushing %d bytes", (int)session_ref, hdr->msg_size);
+  PBL_LOG_DBG("Session: %p - Flushing %d bytes", session_ref, hdr->msg_size);
   success = (session->transport)(session->msg_buffer, hdr->msg_size + sizeof(PLogMessageHdr));
   if (!success) {
     PBL_LOG_ERR("Failure when sending encoded message, resetting session");
@@ -467,7 +467,7 @@ exit:
 }
 
 bool protobuf_log_session_delete(ProtobufLogRef session_ref) {
-  PBL_LOG_DBG("Session: 0x%x - Deleting", (int)session_ref);
+  PBL_LOG_DBG("Session: %p - Deleting", session_ref);
 
   if (session_ref == NULL) {
     return true;

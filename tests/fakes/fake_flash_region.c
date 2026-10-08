@@ -2,7 +2,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 #include <pbl/drivers/flash.h>
-#include "flash_region/flash_region.h"
+#include <flash_region/flash_region.h>
 
 #include <stdint.h>
 
@@ -24,8 +24,6 @@ static void prv_erase_optimal_range(uint32_t min_start, uint32_t max_start, uint
   if (sector_end > (int32_t)max_end) {
     sector_end -= SECTOR_SIZE_BYTES;
   }
-
-  int erase_count = 0;
 
   // Do the upkeep immediately just in case we've spent awhile running without feeding the
   // watchdog before doing this erase operation.

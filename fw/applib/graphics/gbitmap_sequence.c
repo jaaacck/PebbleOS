@@ -4,14 +4,14 @@
 #include "gbitmap_sequence.h"
 
 #include "gbitmap_png.h"
-#include "applib/graphics/raw_image.h"
-#include "pbl/util/units.h"
-#include "applib/app_logging.h"
-#include "applib/applib_malloc.auto.h"
-#include "syscall/syscall.h"
-#include "system/passert.h"
-#include "pbl/util/bitops.h"
-#include "pbl/util/math.h"
+#include <applib/graphics/raw_image.h>
+#include <pbl/util/units.h>
+#include <applib/app_logging.h>
+#include <applib/applib_malloc.auto.h>
+#include <syscall/syscall.h>
+#include <system/passert.h>
+#include <pbl/util/bitops.h>
+#include <pbl/util/math.h>
 
 #define APNG_DECODE_ERROR    "APNG decoding failed"
 #define APNG_MEMORY_ERROR    "APNG memory allocation failed"
@@ -166,14 +166,6 @@ void gbitmap_sequence_destroy(GBitmapSequence *bitmap_sequence) {
     applib_free(bitmap_sequence->png_decoder_data.palette);
     applib_free(bitmap_sequence);
   }
-}
-
-static PBL_ALWAYS_INLINE GColor8 *prv_target_pixel_addr(GBitmap *bitmap, apng_fctl *fctl,
-                                                        uint32_t x, uint32_t y) {
-  uint32_t offset = (fctl->y_offset + y + bitmap->bounds.origin.y) * bitmap->row_size_bytes +
-                    (fctl->x_offset + x + bitmap->bounds.origin.x);
-  GColor8 *pixel_data = bitmap->addr;
-  return &pixel_data[offset];
 }
 
 static void prv_set_pixel_in_row(uint8_t *row_data, GBitmapFormat bitmap_format, uint32_t x,

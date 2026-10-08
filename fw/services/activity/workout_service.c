@@ -1,29 +1,29 @@
 /* SPDX-FileCopyrightText: 2024 Google LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "pbl/services/activity/workout_service.h"
+#include <pbl/services/activity/workout_service.h>
 
-#include "pbl/services/activity/activity_algorithm.h"
-#include "pbl/services/activity/activity_calculators.h"
-#include "pbl/services/activity/activity_insights.h"
-#include "pbl/services/activity/activity_private.h"
-#include "pbl/services/activity/hr_util.h"
+#include <pbl/services/activity/activity_algorithm.h>
+#include <pbl/services/activity/activity_calculators.h>
+#include <pbl/services/activity/activity_insights.h>
+#include <pbl/services/activity/activity_private.h>
+#include <pbl/services/activity/hr_util.h>
 
-#include "apps/system/workout/utils.h"
-#include "applib/app.h"
-#include "applib/health_service.h"
-#include "kernel/events.h"
-#include "kernel/pbl_malloc.h"
-#include "pbl/services/evented_timer.h"
-#include "pbl/services/hrm/hrm_manager_private.h"
-#include "pbl/services/regular_timer.h"
+#include <apps/system/workout/utils.h>
+#include <applib/app.h>
+#include <applib/health_service.h>
+#include <kernel/events.h>
+#include <kernel/pbl_malloc.h>
+#include <pbl/services/evented_timer.h>
+#include <pbl/services/hrm/hrm_manager_private.h>
+#include <pbl/services/regular_timer.h>
 #include <pbl/logging/logging.h>
-#include "system/passert.h"
-#include "pbl/services/time.h"
-#include "pbl/util/units.h"
+#include <system/passert.h>
+#include <pbl/services/time.h>
+#include <pbl/util/units.h>
 
-#include "pbl/kernel/mutex.h"
-#include "pbl/util/testing.h"
+#include <pbl/kernel/mutex.h>
+#include <pbl/util/testing.h>
 
 PBL_LOG_MODULE_DECLARE(service_activity, CONFIG_SERVICE_ACTIVITY_LOG_LEVEL);
 
@@ -308,9 +308,11 @@ void workout_service_health_event_handler(PebbleHealthEvent *event) {
       goto unlock;
     }
     if (event->type == HealthEventMovementUpdate) {
-      prv_handle_movement_update(&event->data.movement_update);
+      HealthEventMovementUpdateData movement_update = event->data.movement_update;
+      prv_handle_movement_update(&movement_update);
     } else if (event->type == HealthEventHeartRateUpdate) {
-      prv_handle_heart_rate_update(&event->data.heart_rate_update);
+      HealthEventHeartRateUpdateData heart_rate_update = event->data.heart_rate_update;
+      prv_handle_heart_rate_update(&heart_rate_update);
     }
   }
 unlock:

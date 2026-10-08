@@ -1,25 +1,25 @@
 /* SPDX-FileCopyrightText: 2025 Core Devices LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "board/board.h"
+#include <board/board.h>
 #include <pbl/drivers/exti.h>
 #include <pbl/drivers/gpio.h>
 #include <pbl/drivers/i2c.h>
 #include <pbl/drivers/rtc.h>
 #include <pbl/drivers/touch/touch_sensor.h>
-#include "kernel/events.h"
-#include "kernel/util/sleep.h"
-#include "pbl/kernel/types.h"
-#include "pbl/services/analytics/analytics.h"
-#include "pbl/services/regular_timer.h"
-#include "pbl/services/touch/touch.h"
-#include "pbl/services/system_task.h"
+#include <kernel/events.h>
+#include <kernel/util/sleep.h>
+#include <pbl/kernel/types.h>
+#include <pbl/services/analytics/analytics.h>
+#include <pbl/services/regular_timer.h>
+#include <pbl/services/touch/touch.h>
+#include <pbl/services/system_task.h>
 #include <pbl/logging/logging.h>
-#include "system/passert.h"
-#include "pbl/util/math.h"
+#include <system/passert.h>
+#include <pbl/util/math.h>
 #include <pbl/util/bits.h>
 
-#include "cst816_fw.h"
+#include <cst816_fw.h>
 
 PBL_LOG_MODULE_DEFINE(driver_touch_cst816, CONFIG_DRIVER_TOUCH_LOG_LEVEL);
 
@@ -389,8 +389,10 @@ static void prv_exti_cb(void) {
     return;
   }
 
-  system_task_add_callback_from_isr(prv_process_pending_messages, NULL);
   s_callback_scheduled = true;
+  if (!system_task_add_callback_from_isr_droppable_raised(prv_process_pending_messages, NULL)) {
+    s_callback_scheduled = false;
+  }
 }
 
 // Runs on the system task: the actual recovery reset (cst816_hw_reset() sleeps

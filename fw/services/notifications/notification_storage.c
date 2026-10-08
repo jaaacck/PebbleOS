@@ -1,19 +1,19 @@
 /* SPDX-FileCopyrightText: 2024 Google LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "pbl/services/notifications/notification_storage.h"
-#include "pbl/services/notifications/notification_storage_private.h"
+#include <pbl/services/notifications/notification_storage.h>
+#include <pbl/services/notifications/notification_storage_private.h>
 
-#include "pbl/util/uuid.h"
-#include "kernel/pbl_malloc.h"
-#include "pbl/services/filesystem/pfs.h"
-#include "pbl/services/timeline/attribute_private.h"
-#include "pbl/util/math.h"
+#include <pbl/util/uuid.h>
+#include <kernel/pbl_malloc.h>
+#include <pbl/services/filesystem/pfs.h>
+#include <pbl/services/timeline/attribute_private.h>
+#include <pbl/util/math.h>
 #include <pbl/logging/logging.h>
 #include <pbl/logging/logging.h>
-#include "pbl/kernel/mutex.h"
-#include "system/passert.h"
-#include "pbl/util/iterator.h"
+#include <pbl/kernel/mutex.h>
+#include <system/passert.h>
+#include <pbl/util/iterator.h>
 
 #include <inttypes.h>
 #include <stddef.h>
@@ -348,7 +348,7 @@ static bool prv_uuid_equal_func(SerializedTimelineItemHeader *header, void *data
 }
 
 static bool prv_ancs_id_compare_func(SerializedTimelineItemHeader *header, void *data) {
-  uint32_t ancs_uid = (uint32_t)data;
+  uintptr_t ancs_uid = (uintptr_t)data;
   return header->common.ancs_uid == ancs_uid;
 }
 

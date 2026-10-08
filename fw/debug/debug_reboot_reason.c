@@ -3,12 +3,12 @@
 
 #include "debug.h"
 
-#include "comm/ble/gatt_service_changed.h"
-#include "kernel/core_dump.h"
-#include "kernel/event_loop.h"
-#include "popups/crashed_ui.h"
+#include <comm/ble/gatt_service_changed.h>
+#include <kernel/core_dump.h>
+#include <kernel/event_loop.h>
+#include <popups/crashed_ui.h>
 #include <pbl/logging/logging.h>
-#include "system/reboot_reason.h"
+#include <system/reboot_reason.h>
 
 static RebootReasonCode s_last_reboot_reason_code = RebootReasonCode_Unknown;
 RebootReasonCode reboot_reason_get_last_reboot_reason(void) {
@@ -109,10 +109,11 @@ void debug_reboot_reason_print(McuRebootReason mcu_reboot_reason) {
         }
       }
       break;
-    case RebootReasonCode_StackOverflow:
+    case RebootReasonCode_StackOverflow: {
       PebbleTask task = (PebbleTask)reason.data8[0];
       PBL_LOG_WRN("%s%sStackOverflow: Task #%d", restarted_safely_string, rebooted_due_to, task);
       break;
+    }
     case RebootReasonCode_EventQueueFull:
       PBL_LOG_WRN("%s%sEvent Queue Full", restarted_safely_string, rebooted_due_to);
       PBL_LOG_WRN("LR: 0x%" PRIx32 " Current: 0x%" PRIx32 " Dropped: 0x%" PRIx32,

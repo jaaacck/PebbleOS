@@ -5,14 +5,14 @@
 
 #include "ble_app_support.h"
 
-#include "applib/applib_malloc.auto.h"
-#include "pbl/services/event_service.h"
-#include "process_state/app_state/app_state.h"
-#include "syscall/syscall.h"
-#include "syscall/syscall_internal.h"
+#include <applib/applib_malloc.auto.h>
+#include <pbl/services/event_service.h>
+#include <process_state/app_state/app_state.h>
+#include <syscall/syscall.h>
+#include <syscall/syscall_internal.h>
 #include <pbl/logging/logging.h>
-#include "system/passert.h"
-#include "pbl/util/math.h"
+#include <system/passert.h>
+#include <pbl/util/math.h>
 
 #include <stdint.h>
 
@@ -134,7 +134,7 @@ static void prv_consume_notifications(const PebbleBLEGATTClientEvent *e,
 
   uint16_t heap_buffer_size = 0;
   uint16_t value_length = 0;
-  bool has_more = sys_ble_client_get_notification_value_length(&value_length);
+  bool has_more = sys_ble_client_get_notification_value_length(NULL, &value_length);
   while (has_more) {
     if (heap_buffer_size < value_length) {
       const uint16_t new_heap_buffer_size = MIN(value_length, 64 /* arbitrary min size.. */);

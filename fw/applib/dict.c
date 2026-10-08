@@ -5,8 +5,8 @@
 
 #include <string.h>
 
-#include "system/passert.h"
-#include "kernel/pbl_malloc.h"
+#include <system/passert.h>
+#include <kernel/pbl_malloc.h>
 
 static DictionaryResult dict_init(DictionaryIterator *iter, const uint8_t *const buffer,
                                   const uint16_t length) {
@@ -170,7 +170,7 @@ Tuple *dict_read_first(DictionaryIterator *iter) {
   return get_safe_cursor(iter);
 }
 
-uint32_t dict_calc_buffer_size(const uint8_t count, ...) {
+uint32_t dict_calc_buffer_size(uint32_t count, ...) {
   uint32_t total_size = sizeof(Dictionary);
   if (count == 0) {
     return total_size;
@@ -178,7 +178,7 @@ uint32_t dict_calc_buffer_size(const uint8_t count, ...) {
   va_list vl;
   va_start(vl, count);
   for (unsigned int i = 0; i < count; ++i) {
-    total_size += va_arg(vl, unsigned int) + sizeof(Tuple);
+    total_size += va_arg(vl, size_t) + sizeof(Tuple);
   }
   va_end(vl);
   return total_size;

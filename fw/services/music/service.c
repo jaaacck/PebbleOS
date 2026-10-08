@@ -1,18 +1,18 @@
 /* SPDX-FileCopyrightText: 2024 Google LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "pbl/services/music_internal.h"
+#include <pbl/services/music_internal.h>
 
-#include "applib/graphics/gtypes.h"
-#include "apps/system/music.h"
-#include "pbl/services/imaging.h"
+#include <applib/graphics/gtypes.h>
+#include <apps/system/music.h>
+#include <pbl/services/imaging.h>
 #include <pbl/drivers/rtc.h>
-#include "kernel/events.h"
-#include "kernel/pbl_malloc.h"
-#include "pbl/kernel/mutex.h"
-#include "pbl/kernel/types.h"
+#include <kernel/events.h>
+#include <kernel/pbl_malloc.h>
+#include <pbl/kernel/mutex.h>
+#include <pbl/kernel/types.h>
 #include <pbl/logging/logging.h>
-#include "pbl/util/math.h"
+#include <pbl/util/math.h>
 
 PBL_LOG_MODULE_DEFINE(service_music, CONFIG_SERVICE_MUSIC_LOG_LEVEL);
 
@@ -638,3 +638,34 @@ void command_print_now_playing(void) {
   char buffer[128];
   dbgserial_putstr_fmt(buffer, 128, "title=%s; artist=%s; album=%s", title, artist, album);
 }
+
+#ifdef CONFIG_SHELL
+#include <inttypes.h>
+#include <pbl/shell/shell.h>
+
+static int prv_cmd_music(const struct pbl_shell *sh, size_t argc, char **argv) {
+  char title[MUSIC_BUFFER_LENGTH];
+  char artist[MUSIC_BUFFER_LENGTH];
+  char album[MUSIC_BUFFER_LENGTH];
+  char player[MUSIC_BUFFER_LENGTH] = "";
+  uint32_t position_ms;
+  uint32_t length_ms;
+
+  music_get_now_playing(title, artist, album);
+  music_get_player_name(player);
+  music_get_pos(&position_ms, &length_ms);
+
+  const char *server = music_get_connected_server_debug_name();
+  pbl_shell_print(sh, "Server: %s", server ? server : "");
+  pbl_shell_print(sh, "Player: %s", player);
+  pbl_shell_print(sh, "Title: %s", title);
+  pbl_shell_print(sh, "Artist: %s", artist);
+  pbl_shell_print(sh, "Album: %s", album);
+  pbl_shell_print(sh, "State: %d", music_get_playback_state());
+  pbl_shell_print(sh, "Position: %" PRIu32 "/%" PRIu32, position_ms, length_ms);
+  pbl_shell_print(sh, "Volume: %u", music_get_volume_percent());
+  return 0;
+}
+
+PBL_SHELL_CMD_REGISTER(music, NULL, "Show what the music player plays", prv_cmd_music);
+#endif

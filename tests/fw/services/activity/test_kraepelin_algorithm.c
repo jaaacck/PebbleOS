@@ -4,29 +4,29 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "applib/accel_service.h"
-#include "pbl/services/hrm/hrm_manager_private.h"
-#include "pbl/services/activity/activity_algorithm.h"
-#include "pbl/services/activity/kraepelin/activity_algorithm_kraepelin.h"
-#include "pbl/services/activity/kraepelin/kraepelin_algorithm.h"
+#include <applib/accel_service.h>
+#include <pbl/services/hrm/hrm_manager_private.h>
+#include <pbl/services/activity/activity_algorithm.h>
+#include <pbl/services/activity/kraepelin/activity_algorithm_kraepelin.h>
+#include <pbl/services/activity/kraepelin/kraepelin_algorithm.h>
 #include <pbl/logging/logging.h>
-#include "system/passert.h"
-#include "pbl/util/list.h"
-#include "pbl/util/math.h"
-#include "pbl/util/size.h"
-#include "pbl/util/units.h"
+#include <system/passert.h>
+#include <pbl/util/list.h>
+#include <pbl/util/math.h>
+#include <pbl/util/size.h>
+#include <pbl/util/units.h>
 
-#include "clar.h"
+#include <clar.h>
 
 // Stubs
-#include "stubs_hexdump.h"
-#include "stubs_logging.h"
-#include "stubs_passert.h"
-#include "stubs_pbl_malloc.h"
-#include "stubs_sleep.h"
+#include <stubs_hexdump.h>
+#include <stubs_logging.h>
+#include <stubs_passert.h>
+#include <stubs_pbl_malloc.h>
+#include <stubs_sleep.h>
 
 // Fakes
-#include "fake_rtc.h"
+#include <fake_rtc.h>
 
 HRMSessionRef s_hrm_next_session_ref = 1;
 int s_hrm_live_subscriptions = 0;
@@ -242,10 +242,10 @@ static void prv_assert_activity_present(KAlgTestActivitySession *sessions, int n
 
 // ==================================================================================
 // Functions used for collecting stats and writing them out to a csv
-static const int k_stats_max_columns = 32;
+#define STATS_MAX_COLUMNS 32
 typedef struct {
   ListNode node;
-  uint32_t values[k_stats_max_columns];
+  uint32_t values[STATS_MAX_COLUMNS];
 } StatsRow;
 typedef enum {
   StatsEpochTypeNonStepping = 0,
@@ -254,13 +254,13 @@ typedef enum {
 } StatsEpochType;
 
 static int s_stats_num_columns = 0;
-static char *s_stats_column_names[k_stats_max_columns];
+static char *s_stats_column_names[STATS_MAX_COLUMNS];
 static StatsRow *s_stat_rows;
 
 // ---------------------------------------------------------------------------------------
 static void prv_stats_reinit(void) {
   // Delete stuff from prior stats run
-  cl_assert(s_stats_num_columns < k_stats_max_columns);
+  cl_assert(s_stats_num_columns < STATS_MAX_COLUMNS);
   for (int i = 0; i < s_stats_num_columns; i++) {
     free(s_stats_column_names[i]);
     s_stats_column_names[i] = NULL;
@@ -309,25 +309,7 @@ static void prv_stats_cb(uint32_t num_stats, const char **names, int32_t *values
   }
 }
 
-// ---------------------------------------------------------------------------------------
-// Set a specific column in the last row by name
-static void prv_stats_set_last_row_value(const char *name, uint32_t value) {
-  if (s_stat_rows == NULL) {
-    return;
-  }
-  StatsRow *stats = (StatsRow *)list_get_tail(&s_stat_rows->node);
-  cl_assert(stats != NULL);
-  bool found = 0;
-  for (int i = 0; i < s_stats_num_columns; i++) {
-    if (strcmp(s_stats_column_names[i], name) == 0) {
-      found = true;
-      stats->values[i] = value;
-      break;
-    }
-  }
-  cl_assert(found);
-}
-
+#ifdef STATS_FILE_NAME
 // ---------------------------------------------------------------------------------------
 // Write out accumulated stats to a csv file
 static void prv_stats_write(const char *filename, bool create, const char *test_name,
@@ -376,6 +358,7 @@ static void prv_stats_write(const char *filename, bool create, const char *test_
   cl_assert_equal_i(0, fclose(file));
   printf("Stats written to file: %s", filename);
 }
+#endif
 
 // ---------------------------------------------------------------------------------------
 // Run samples through the algorithm integrated into the firmware
@@ -1272,7 +1255,6 @@ void test_kraepelin_algorithm__step_tests(void) {
       "-----------------------------");
 
   float weighted_sum = 0.0;
-  int pass_count = 0;
   int fail_count = 0;
   StepFileTestEntry *entry = &test_entry[0];
   StepTestResults *results;
@@ -1288,7 +1270,6 @@ void test_kraepelin_algorithm__step_tests(void) {
       fail_count++;
     } else {
       status = "pass";
-      pass_count++;
     }
     printf("\n%-40s %-10d %-10d %-10d %-10d %-10d %-10d %-10.2f %-10s", entry->name,
            entry->exp_steps, results->steps, error, entry->exp_steps_min, entry->exp_steps_max,
@@ -1624,7 +1605,6 @@ void test_kraepelin_algorithm__sleep_tests(void) {
   }
 
   float weighted_sum = 0.0;
-  int pass_count = 0;
   int fail_count = 0;
   SleepFileTestEntry *entry = &test_entry[0];
   SleepTestResults *results;
@@ -1633,9 +1613,7 @@ void test_kraepelin_algorithm__sleep_tests(void) {
 
     // Generate the status string
     const char *status = prv_status_str(results->all_passed);
-    if (results->all_passed) {
-      pass_count++;
-    } else {
+    if (!results->all_passed) {
       fail_count++;
     }
 
@@ -1811,7 +1789,6 @@ void test_kraepelin_algorithm__activity_tests(void) {
   }
 
   float weighted_sum = 0.0;
-  int pass_count = 0;
   int fail_count = 0;
   ActivityFileTestEntry *entry = &test_entry[0];
   ActivityTestResults *results;
@@ -1820,9 +1797,7 @@ void test_kraepelin_algorithm__activity_tests(void) {
 
     // Generate the status string
     const char *status = prv_status_str(results->all_passed);
-    if (results->all_passed) {
-      pass_count++;
-    } else {
+    if (!results->all_passed) {
       fail_count++;
     }
 

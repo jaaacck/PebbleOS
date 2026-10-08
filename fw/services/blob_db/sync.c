@@ -1,15 +1,15 @@
 /* SPDX-FileCopyrightText: 2024 Google LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "pbl/services/blob_db/sync.h"
-#include "pbl/services/blob_db/endpoint.h"
-#include "pbl/services/blob_db/util.h"
+#include <pbl/services/blob_db/sync.h>
+#include <pbl/services/blob_db/endpoint.h>
+#include <pbl/services/blob_db/util.h>
 
-#include "kernel/pbl_malloc.h"
-#include "pbl/services/comm_session/session.h"
-#include "pbl/services/system_task.h"
+#include <kernel/pbl_malloc.h>
+#include <pbl/services/comm_session/session.h>
+#include <pbl/services/system_task.h>
 #include <pbl/logging/logging.h>
-#include "pbl/util/list.h"
+#include <pbl/util/list.h>
 
 PBL_LOG_MODULE_DECLARE(service_blob_db, CONFIG_SERVICE_BLOB_DB_LOG_LEVEL);
 
@@ -38,7 +38,7 @@ static BlobDBSyncSession *prv_find_live_session(void *session_id) {
 }
 
 static bool prv_session_id_filter_callback(ListNode *node, void *data) {
-  BlobDBId db_id = (BlobDBId)data;
+  BlobDBId db_id = (BlobDBId)(uintptr_t)data;
   BlobDBSyncSession *session = (BlobDBSyncSession *)node;
   if (session->session_type == BlobDBSyncSessionTypeRecord) {
     return false;
@@ -183,19 +183,17 @@ status_t blob_db_sync_db(BlobDBId db_id) {
   }
   PBL_LOG_DBG("Starting BlobDB db sync: %d", db_id);
 
+  if (blob_db_sync_get_session_for_id(db_id)) {
+    return E_BUSY;
+  }
+
   BlobDBDirtyItem *dirty_list = blob_db_get_dirty_list(db_id);
   if (!dirty_list) {
     blob_db_endpoint_send_sync_done(db_id);
     return S_NO_ACTION_REQUIRED;
   }
 
-  BlobDBSyncSession *session = blob_db_sync_get_session_for_id(db_id);
-  if (session) {
-    // already have a session in progress!
-    return E_BUSY;
-  }
-
-  session = prv_create_sync_session(db_id, dirty_list, BlobDBSyncSessionTypeDB);
+  BlobDBSyncSession *session = prv_create_sync_session(db_id, dirty_list, BlobDBSyncSessionTypeDB);
 
   prv_send_writeback(session);
 

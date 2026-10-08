@@ -1,27 +1,27 @@
 /* SPDX-FileCopyrightText: 2024 Google LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "pbl/services/wakeup.h"
+#include <pbl/services/wakeup.h>
 
-#include "popups/wakeup_ui.h"
+#include <popups/wakeup_ui.h>
 
-#include "pbl/kernel/mutex.h"
-#include "process_management/app_install_manager.h"
-#include "process_management/app_manager.h"
-#include "pbl/services/clock.h"
-#include "pbl/services/event_service.h"
-#include "pbl/services/new_timer/new_timer.h"
-#include "pbl/services/system_task.h"
-#include "pbl/services/settings/settings_file.h"
-#include "syscall/syscall.h"
-#include "syscall/syscall_internal.h"
+#include <pbl/kernel/mutex.h>
+#include <process_management/app_install_manager.h>
+#include <process_management/app_manager.h>
+#include <pbl/services/clock.h>
+#include <pbl/services/event_service.h>
+#include <pbl/services/new_timer/new_timer.h>
+#include <pbl/services/system_task.h>
+#include <pbl/services/settings/settings_file.h>
+#include <syscall/syscall.h>
+#include <syscall/syscall_internal.h>
 #include <pbl/logging/logging.h>
-#include "pbl/kernel/compiler.h"
-#include "pbl/util/math.h"
-#include "pbl/util/units.h"
+#include <pbl/kernel/compiler.h>
+#include <pbl/util/math.h>
+#include <pbl/util/units.h>
 
-#include "kernel/pbl_malloc.h"
-#include "pbl/services/time.h"
+#include <kernel/pbl_malloc.h>
+#include <pbl/services/time.h>
 
 PBL_LOG_MODULE_DEFINE(service_wakeup, CONFIG_SERVICE_WAKEUP_LOG_LEVEL);
 
@@ -47,14 +47,14 @@ typedef struct PBL_PACKED {
   bool repeating;               //!< Enable event repetition
   uint16_t repeat_hours_offset; //!< repeat hour interval
   bool notify_if_missed;        //!< Notify user if wakeup event has been missed
-  time_t timestamp;             //!< The time at which this entry will wake up at
+  int32_t timestamp;            //!< The time at which this entry will wake up at
   bool utc;                     //!< If timezone has been set, the this is UTC time
 } WakeupEntry;
 
 typedef struct PBL_PACKED {
   WakeupId current_wakeup_id;
   WakeupId next_wakeup_id;
-  time_t timestamp;
+  int32_t timestamp;
 } WakeupState;
 
 struct prv_missed_events_s {
@@ -80,7 +80,7 @@ static WakeupState s_wakeup_state = {-1, -1, 0};
 static bool s_catchup_enabled = false; // enables catching up with missed events
 
 void wakeup_dispatcher_system_task(void *data) {
-  WakeupId wakeup_id = (WakeupId)data;
+  WakeupId wakeup_id = (WakeupId)(intptr_t)data;
   WakeupEntry entry = prv_wakeup_settings_get_entry(wakeup_id);
 
   // Delete event from settings

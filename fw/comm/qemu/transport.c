@@ -1,24 +1,24 @@
 /* SPDX-FileCopyrightText: 2024 Google LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "kernel/event_loop.h"
-#include "kernel/events.h"
-#include "kernel/pbl_malloc.h"
+#include <kernel/event_loop.h>
+#include <kernel/events.h>
+#include <kernel/pbl_malloc.h>
 
-#include "pbl/services/comm_session/session_transport.h"
+#include <pbl/services/comm_session/session_transport.h>
 
-#include "system/passert.h"
+#include <system/passert.h>
 #include <pbl/logging/logging.h>
 
-#include "comm/bt_lock.h"
+#include <comm/bt_lock.h>
 
-#include "comm/qemu/serial.h"
-#include "comm/qemu/serial_private.h"
+#include <comm/qemu/serial.h>
+#include <comm/qemu/serial_private.h>
 
-#include "pbl/util/math.h"
+#include <pbl/util/math.h>
 
-#include "comm/qemu/transport.h"
-#include "comm/qemu/settings.h"
+#include <comm/qemu/transport.h>
+#include <comm/qemu/settings.h>
 
 typedef struct {
   CommSession *session;
@@ -206,11 +206,21 @@ unlock:
   bt_unlock();
 }
 
+#ifndef CONFIG_BT_HCI_UART
+static bool prv_default_connected(void) {
+#ifdef CONFIG_QEMU
+  return qemu_setting_get(QemuSetting_DefaultConnected);
+#else
+  return true;
+#endif
+}
+#endif
+
 void qemu_transport_start(void) {
 #ifndef CONFIG_BT_HCI_UART
   // Open the session synchronously: the host may send a WatchVersionRequest
   // as soon as it sees "Ready for communication".
-  if (qemu_setting_get(QemuSetting_DefaultConnected)) {
+  if (prv_default_connected()) {
     qemu_transport_set_connected(true);
   }
 #endif

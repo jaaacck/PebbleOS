@@ -1,14 +1,14 @@
 /* SPDX-FileCopyrightText: 2024 Google LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "apps/system/timeline/timeline.h"
-#include "resource/resource.h"
-#include "resource/resource_ids.auto.h"
-#include "pbl/services/timeline/timeline_resources.h"
+#include <apps/system/timeline/timeline.h>
+#include <resource/resource.h>
+#include <resource/resource_ids.auto.h>
+#include <pbl/services/timeline/timeline_resources.h>
 
 #include "test_timeline_app_includes.h"
-#include "fixtures/screen_grid.h"
-#include "pbl/util/units.h"
+#include <fixtures/screen_grid.h>
+#include <pbl/util/units.h>
 
 // Setup and Teardown
 ////////////////////////////////////
@@ -130,7 +130,7 @@ static void prv_create_list_view_and_render(ListViewConfig *config) {
 static void prv_check_for_each_size(void (*render)(void), const char *pbi_file) {
   ScreenGrid grid;
   screen_grid_init(&grid, 1);
-  for (PreferredContentSize size = PreferredContentSizeSmall; size < grid.num_sizes; size++) {
+  for (PreferredContentSize size = grid.first_size; size <= grid.last_size; size++) {
     system_theme_set_content_size(size);
     s_data = (TimelineTestData){};
     render();

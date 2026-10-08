@@ -3,13 +3,11 @@
 
 #include "time_selection_window.h"
 
-#include "applib/ui/option_menu_window.h"
-#include "pbl/services/clock.h"
-#include "shell/system_theme.h"
+#include <applib/ui/option_menu_window.h>
+#include <pbl/services/clock.h>
+#include <shell/system_theme.h>
 
 #include <stdio.h>
-
-#pragma GCC diagnostic ignored "-Wformat-truncation"
 
 typedef struct TimeSelectionSizeConfig {
   const char *subtitle_font_key;

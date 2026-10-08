@@ -6,8 +6,8 @@
 #include "attribute.h"
 #include "layout_layer.h"
 
-#include "pbl/kernel/compiler.h"
-#include "pbl/util/uuid.h"
+#include <pbl/kernel/compiler.h>
+#include <pbl/util/uuid.h>
 
 #include <time.h>
 #include <stdint.h>
@@ -215,7 +215,7 @@ typedef struct PBL_PACKED {
    * Time at which the item occurs, in seconds since the epoch. UTC, except for all-day and
    * floating items in serialized headers, which use local time.
    */
-  time_t timestamp;
+  int32_t timestamp;
   /**
    * Duration in minutes. A pin stays in the NOW section of the timeline until timestamp plus
    * duration.

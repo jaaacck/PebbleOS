@@ -4,27 +4,27 @@
 #include "ppogatt.h"
 #include "ppogatt_internal.h"
 
-#include "comm/ble/gap_le_connection.h"
-#include "comm/ble/gatt_client_operations.h"
-#include "comm/bt_lock.h"
+#include <comm/ble/gap_le_connection.h>
+#include <comm/ble/gatt_client_operations.h>
+#include <comm/bt_lock.h>
 
 #include <pbl/bluetooth/ppog_reversed.h>
 #include <pbl/bluetooth/gatt.h>
 
-#include "kernel/event_loop.h"
-#include "kernel/pbl_malloc.h"
-#include "pbl/services/analytics/analytics.h"
-#include "pbl/services/comm_session/session_transport.h"
-#include "pbl/services/new_timer/new_timer.h"
-#include "pbl/services/regular_timer.h"
-#include "pbl/services/system_task.h"
+#include <kernel/event_loop.h>
+#include <kernel/pbl_malloc.h>
+#include <pbl/services/analytics/analytics.h>
+#include <pbl/services/comm_session/session_transport.h>
+#include <pbl/services/new_timer/new_timer.h>
+#include <pbl/services/regular_timer.h>
+#include <pbl/services/system_task.h>
 
-#include "system/hexdump.h"
+#include <system/hexdump.h>
 #include <pbl/logging/logging.h>
-#include "system/passert.h"
-#include "pbl/kernel/compiler.h"
-#include "pbl/util/list.h"
-#include "pbl/util/math.h"
+#include <system/passert.h>
+#include <pbl/kernel/compiler.h>
+#include <pbl/util/list.h>
+#include <pbl/util/math.h>
 
 #include <inttypes.h>
 
@@ -96,12 +96,12 @@ typedef struct PPoGATTClient {
   //! Stuffs that deals with outbound data
   struct {
     union {
-      PPoGATTPacket reset_packet_to_send;
+      PPoGATTPacketHeader reset_packet_to_send;
       //! Set to 0 if there is no reset packet to send
       uint8_t reset_packet_byte;
     };
     union {
-      PPoGATTPacket ack_packet_to_send;
+      PPoGATTPacketHeader ack_packet_to_send;
       //! Set to 0 if there is no ack packet to send
       uint8_t ack_packet_byte;
     };
@@ -686,7 +686,7 @@ static void prv_handle_reset_complete(PPoGATTClient *client, const PPoGATTPacket
   client->resets_counter = 0;
 
   if (PBL_LIKELY(client->state == StateConnectedClosedAwaitingResetCompleteSelfInitiatedReset)) {
-    client->out.reset_packet_to_send = (const PPoGATTPacket){
+    client->out.reset_packet_to_send = (const PPoGATTPacketHeader){
       .sn = 0,
       .type = PPoGATTPacketTypeResetComplete,
     };
@@ -770,7 +770,7 @@ static void prv_handle_ack(PPoGATTClient *client, uint32_t sn) {
 static void prv_handle_data(PPoGATTClient *client, const PPoGATTPacket *packet,
                             uint16_t payload_length) {
   if (client->in.next_expected_data_sn == packet->sn) {
-    client->out.ack_packet_to_send = (const PPoGATTPacket){
+    client->out.ack_packet_to_send = (const PPoGATTPacketHeader){
       .sn = client->in.next_expected_data_sn,
       .type = PPoGATTPacketTypeAck,
     };
@@ -1454,7 +1454,7 @@ static const PPoGATTPacket *prv_prepare_next_reset_packet(const PPoGATTClient *c
     } else {
       // Reset Complete packet (zero payload size):
       *payload_size_out = 0;
-      return &client->out.reset_packet_to_send;
+      return (const PPoGATTPacket *)&client->out.reset_packet_to_send;
     }
   }
 }
@@ -1523,7 +1523,7 @@ static const PPoGATTPacket *prv_prepare_next_packet(PPoGATTClient *client,
 
       // Ack packet (zero payload size):
       *payload_size_out = 0;
-      return &client->out.ack_packet_to_send;
+      return (const PPoGATTPacket *)&client->out.ack_packet_to_send;
     }
 
     if (!new_timer_scheduled(client->rx_ack_timer, NULL)) {

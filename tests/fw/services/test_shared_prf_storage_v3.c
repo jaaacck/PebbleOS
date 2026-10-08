@@ -1,26 +1,26 @@
 /* SPDX-FileCopyrightText: 2024 Google LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "pbl/services/shared_prf_storage/shared_prf_storage.h"
-#include "pbl/services/shared_prf_storage/v3_sprf/shared_prf_storage_private.h"
-#include "flash_region/flash_region.h"
+#include <pbl/services/shared_prf_storage/shared_prf_storage.h>
+#include <pbl/services/shared_prf_storage/v3_sprf/shared_prf_storage_private.h>
+#include <flash_region/flash_region.h>
 #include <pbl/drivers/flash.h>
-#include "pbl/util/size.h"
+#include <pbl/util/size.h>
 
 #include <pbl/bluetooth/sm_types.h>
 #include <pbl/btutil/sm_util.h>
-#include "pbl/kernel/mutex.h"
+#include <pbl/kernel/mutex.h>
 
 #include <string.h>
 
-#include "clar.h"
+#include <clar.h>
 
 // Fakes
 //////////////////////////////////////////////////////////
-#include "fake_spi_flash.h"
-#include "stubs_pbl_malloc.h"
-#include "stubs_passert.h"
-#include "stubs_logging.h"
+#include <fake_spi_flash.h>
+#include <stubs_pbl_malloc.h>
+#include <stubs_passert.h>
+#include <stubs_logging.h>
 
 // Externs
 //////////////////////////////////////////////////////////
@@ -301,10 +301,9 @@ void test_shared_prf_storage_v3__ble_pairing(void) {
                     pairing_info_out.local_encryption_info.ediv);
   cl_assert_equal_i(PAIRING_INFO.local_encryption_info.div,
                     pairing_info_out.local_encryption_info.div);
-  cl_assert_equal_i(PAIRING_INFO.identity.opaque.opaque_64,
-                    pairing_info_out.identity.opaque.opaque_64);
-  cl_assert_equal_i(PAIRING_INFO.remote_encryption_info.rand,
-                    pairing_info_out.remote_encryption_info.rand);
+  cl_assert(PAIRING_INFO.identity.opaque.opaque_64 == pairing_info_out.identity.opaque.opaque_64);
+  cl_assert(PAIRING_INFO.remote_encryption_info.rand ==
+            pairing_info_out.remote_encryption_info.rand);
   cl_assert_equal_i(PAIRING_INFO.remote_encryption_info.ediv,
                     pairing_info_out.remote_encryption_info.ediv);
   cl_assert_equal_i(

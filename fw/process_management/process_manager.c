@@ -6,44 +6,44 @@
 #include "app_manager.h"
 #include "worker_manager.h"
 
-#include "applib/app_logging.h"
-#include "applib/accel_service_private.h"
-#include "applib/platform.h"
-#include "applib/ui/dialogs/dialog.h"
-#include "applib/ui/dialogs/expandable_dialog.h"
+#include <applib/app_logging.h>
+#include <applib/accel_service_private.h>
+#include <applib/platform.h>
+#include <applib/ui/dialogs/dialog.h>
+#include <applib/ui/dialogs/expandable_dialog.h>
 
-#include "process_state/app_state/app_state.h"
-#include "process_state/worker_state/worker_state.h"
+#include <process_state/app_state/app_state.h>
+#include <process_state/worker_state/worker_state.h>
 
 #include "pebble_process_md.h"
-#include "kernel/pebble_tasks.h"
-#include "pbl/kernel/types.h"
-#include "resource/resource_ids.auto.h"
-#include "pbl/services/animation_service.h"
-#include "pbl/services/analytics/analytics.h"
-#include "pbl/services/evented_timer.h"
-#include "pbl/services/event_service.h"
-#include "pbl/services/hrm/hrm_manager.h"
-#include "pbl/services/app_cache.h"
-#include "pbl/services/blob_db/app_db.h"
-#include "pbl/services/data_logging/data_logging_service.h"
-#include "pbl/services/persist.h"
-#include "pbl/services/voice/voice.h"
-#include "shell/normal/watchface.h"
+#include <kernel/pebble_tasks.h>
+#include <pbl/kernel/types.h>
+#include <resource/resource_ids.auto.h>
+#include <pbl/services/animation_service.h>
+#include <pbl/services/analytics/analytics.h>
+#include <pbl/services/evented_timer.h>
+#include <pbl/services/event_service.h>
+#include <pbl/services/hrm/hrm_manager.h>
+#include <pbl/services/app_cache.h>
+#include <pbl/services/blob_db/app_db.h>
+#include <pbl/services/data_logging/data_logging_service.h>
+#include <pbl/services/persist.h>
+#include <pbl/services/voice/voice.h>
+#include <shell/normal/watchface.h>
 
-#include "syscall/syscall.h"
+#include <syscall/syscall.h>
 #include <pbl/logging/logging.h>
-#include "system/passert.h"
+#include <system/passert.h>
 
-#include "kernel/pbl_malloc.h"
-#include "kernel/ui/modals/modal_manager.h"
-#include "pbl/util/heap.h"
+#include <kernel/pbl_malloc.h>
+#include <kernel/ui/modals/modal_manager.h>
+#include <pbl/util/heap.h>
 
-#include "syscall/syscall_internal.h"
+#include <syscall/syscall_internal.h>
 
-#include "apps/system/app_fetch_ui.h"
+#include <apps/system/app_fetch_ui.h>
 
-#include "pbl/kernel/debug.h"
+#include <pbl/kernel/debug.h>
 
 static TimerID s_deinit_timer_id = TIMER_INVALID_ID;
 
@@ -67,7 +67,7 @@ static ProcessContext *prv_get_context(void) {
 // timeout (currently 3 seconds).
 static void prv_graceful_close_timer_callback(void *data) {
   PBL_LOG_DBG("deinit timeout expired, killing app forcefully");
-  PebbleTask task = (PebbleTask)data;
+  PebbleTask task = (PebbleTask)(uintptr_t)data;
 
   process_manager_put_kill_process_event(task, false /*gracefully*/);
 }
@@ -90,7 +90,7 @@ static bool prv_force_stop_task_if_unprivileged(ProcessContext *context) {
 
 // --------------------------------------------------------------------------------------------------
 static void prv_force_close_timer_callback(void *data) {
-  PebbleTask task = (PebbleTask)data;
+  PebbleTask task = (PebbleTask)(uintptr_t)data;
   ProcessContext *context = prv_get_context_for_task(task);
 
   if (!prv_force_stop_task_if_unprivileged(context)) {
@@ -713,7 +713,7 @@ DEFINE_SYSCALL(uint32_t, sys_process_get_launch_args, void) {
   if (sys_process_get_launch_reason() != APP_LAUNCH_TIMELINE_ACTION) {
     return 0;
   } else {
-    return (uint32_t)process_manager_get_current_process_args();
+    return (uint32_t)(uintptr_t)process_manager_get_current_process_args();
   }
 }
 

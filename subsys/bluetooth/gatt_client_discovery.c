@@ -9,7 +9,7 @@
 
 #include <services/gatt/ble_svc_gatt.h>
 
-#include "pbl/kernel/sem.h"
+#include <pbl/kernel/sem.h>
 
 #include "nimble_gattc_op_queue.h"
 #include "nimble_type_conversions.h"
@@ -25,6 +25,24 @@ static PBL_SEM_DEFINE(s_discovery_stopped, 0, 1);
 static void prv_discovery_finished(void) {
   s_discovery_in_progress = false;
   nimble_gattc_op_queue_complete();
+}
+
+//! Takes bt_lock if the connection still exists. Stopping Bluetooth frees the
+//! connections before the host fails the procedures still running on them.
+static bool prv_lock_connection(const GAPLEConnection *connection) {
+  bt_lock();
+  if (gap_le_connection_is_valid(connection)) {
+    return true;
+  }
+  bt_unlock();
+  return false;
+}
+
+static void prv_notify_complete(GAPLEConnection *connection, enum pbl_bt_errno err) {
+  if (prv_lock_connection(connection)) {
+    pbl_bt_cb_gatt_client_discovery_complete(connection, err);
+    bt_unlock();
+  }
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -196,7 +214,10 @@ static int prv_on_svc_chgd_subscribe(uint16_t conn_handle, const struct ble_gatt
     PBL_LOG_ERR("Failed to subscribe to service changed: 0x%" PRIx16, error->status);
   } else {
     GATTServiceDiscoveryDescriptorContext *ctx = arg;
-    pbl_bt_cb_gatt_client_discovery_handle_service_changed(ctx->connection, ctx->chr_handle);
+    if (prv_lock_connection(ctx->connection)) {
+      pbl_bt_cb_gatt_client_discovery_handle_service_changed(ctx->connection, ctx->chr_handle);
+      bt_unlock();
+    }
 
     PBL_LOG_DBG("Subscribed to service changed");
   }
@@ -208,8 +229,13 @@ static int prv_on_svc_chgd_subscribe(uint16_t conn_handle, const struct ble_gatt
 
 static void prv_convert_service_and_notify_os(uint16_t conn_handle,
                                               GATTServiceDiscoveryContext *context) {
+  if (!prv_lock_connection(context->connection)) {
+    prv_free_discovery_context(context);
+    return;
+  }
   list_foreach(context->services, prv_convert_service_and_notify_os_cb, context->connection);
   pbl_bt_cb_gatt_client_discovery_complete(context->connection, PBL_BT_ERRNO_OK);
+  bt_unlock();
 
   // Subscribe to service changed indications (BLE Core 6.0, part G 7.7.1)
   uint16_t chr_handle, dsc_handle;
@@ -333,7 +359,7 @@ static int prv_find_dsc_cb(uint16_t conn_handle, const struct ble_gatt_error *er
   }
 
   switch (error->status) {
-    case 0:
+    case 0: {
       char chr_uuid_str[BLE_UUID_STR_LEN];
       ble_uuid_to_str(&dsc->uuid.u, chr_uuid_str);
       PBL_LOG_DBG("Found descriptor %s (hdl: 0x%" PRIx16 ")", chr_uuid_str, dsc->handle);
@@ -347,6 +373,7 @@ static int prv_find_dsc_cb(uint16_t conn_handle, const struct ble_gatt_error *er
       service_node->num_descriptors++;
 
       break;
+    }
     case BLE_HS_EDONE:
       PBL_LOG_DBG("Descriptor discovery done");
 
@@ -390,7 +417,7 @@ static int prv_find_dsc_cb(uint16_t conn_handle, const struct ble_gatt_error *er
       }
 
       prv_discovery_finished();
-      pbl_bt_cb_gatt_client_discovery_complete(context->connection, errno);
+      prv_notify_complete(context->connection, errno);
       prv_free_discovery_context(context);
       break;
   }
@@ -411,7 +438,7 @@ static int prv_find_chr_cb(uint16_t conn_handle, const struct ble_gatt_error *er
   }
 
   switch (error->status) {
-    case 0:
+    case 0: {
       char chr_uuid_str[BLE_UUID_STR_LEN];
       ble_uuid_to_str(&chr->uuid.u, chr_uuid_str);
       PBL_LOG_DBG("Found characteristic %s (val hdl: 0x%" PRIx16 ", def hdl: 0x%" PRIx16 ")",
@@ -423,6 +450,7 @@ static int prv_find_chr_cb(uint16_t conn_handle, const struct ble_gatt_error *er
       prv_list_append_or_set(&service_node->characteristics, &chr_node->node);
 
       break;
+    }
 
     case BLE_HS_EDONE:
       PBL_LOG_DBG("Characteristic discovery done");
@@ -461,7 +489,7 @@ static int prv_find_chr_cb(uint16_t conn_handle, const struct ble_gatt_error *er
       }
 
       prv_discovery_finished();
-      pbl_bt_cb_gatt_client_discovery_complete(context->connection, errno);
+      prv_notify_complete(context->connection, errno);
       prv_free_discovery_context(context);
       break;
   }
@@ -493,8 +521,9 @@ static int prv_find_inc_svc_cb(uint16_t conn_handle, const struct ble_gatt_error
 
       char service_uuid_str[BLE_UUID_STR_LEN];
       ble_uuid_to_str(&service->uuid.u, service_uuid_str);
-      PBL_LOG_DBG("Found service %s, 0x%" PRIx16 "-0x%" PRIx16 " (total %lu)", service_uuid_str,
-                  service->start_handle, service->end_handle, list_count(context->services));
+      PBL_LOG_DBG("Found service %s, 0x%" PRIx16 "-0x%" PRIx16 " (total %" PRIu32 ")",
+                  service_uuid_str, service->start_handle, service->end_handle,
+                  list_count(context->services));
       break;
 
     case BLE_HS_EDONE:
@@ -507,7 +536,7 @@ static int prv_find_inc_svc_cb(uint16_t conn_handle, const struct ble_gatt_error
       } else {
         // no services found
         prv_discovery_finished();
-        pbl_bt_cb_gatt_client_discovery_complete(context->connection, PBL_BT_ERRNO_OK);
+        prv_notify_complete(context->connection, PBL_BT_ERRNO_OK);
         prv_free_discovery_context(context);
       }
 
@@ -524,7 +553,7 @@ static int prv_find_inc_svc_cb(uint16_t conn_handle, const struct ble_gatt_error
       }
 
       prv_discovery_finished();
-      pbl_bt_cb_gatt_client_discovery_complete(context->connection, errno);
+      prv_notify_complete(context->connection, errno);
       prv_free_discovery_context(context);
       break;
   }

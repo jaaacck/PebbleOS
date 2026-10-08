@@ -1,25 +1,25 @@
 /* SPDX-FileCopyrightText: 2024 Google LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "pbl/services/accel_manager.h"
+#include <pbl/services/accel_manager.h>
 
 #include <pbl/drivers/accel.h>
 #include <pbl/drivers/vibe.h>
-#include "kernel/events.h"
-#include "kernel/pbl_malloc.h"
-#include "pbl/mcu/interrupts.h"
-#include "pbl/kernel/mutex.h"
-#include "pbl/services/analytics/analytics.h"
-#include "pbl/services/event_service.h"
-#include "pbl/services/system_task.h"
-#include "pbl/services/imu/units.h"
-#include "pbl/services/vibe_pattern.h"
-#include "syscall/syscall.h"
-#include "syscall/syscall_internal.h"
+#include <kernel/events.h>
+#include <kernel/pbl_malloc.h>
+#include <pbl/mcu/interrupts.h>
+#include <pbl/kernel/mutex.h>
+#include <pbl/services/analytics/analytics.h>
+#include <pbl/services/event_service.h>
+#include <pbl/services/system_task.h>
+#include <pbl/services/imu/units.h>
+#include <pbl/services/vibe_pattern.h>
+#include <syscall/syscall.h>
+#include <syscall/syscall_internal.h>
 #include <pbl/logging/logging.h>
-#include "system/passert.h"
-#include "pbl/util/math.h"
-#include "pbl/util/shared_cbuf.h"
+#include <system/passert.h>
+#include <pbl/util/math.h>
+#include <pbl/util/shared_cbuf.h>
 
 #include <inttypes.h>
 
@@ -295,7 +295,6 @@ static void prv_dispatch_data(bool post_event) {
     }
 
     // If buffer has room, read more data
-    uint32_t samples_drained = 0;
     while (state->num_samples < state->samples_per_update) {
       // Read available data.
       AccelManagerBufferData data;
@@ -318,7 +317,6 @@ static void prv_dispatch_data(bool post_event) {
 
       memcpy(state->raw_buffer + state->num_samples, &data, sizeof(AccelRawData));
       state->num_samples++;
-      samples_drained++;
     }
 
     // If buffer is full, notify subscriber to process it

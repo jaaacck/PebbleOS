@@ -1,17 +1,17 @@
 /* SPDX-FileCopyrightText: 2024 Google LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "applib/pbl_std/pbl_std.h"
-#include "applib/app_logging.h"
-#include "applib/applib_malloc.auto.h"
-#include "kernel/memory_layout.h"
-#include "pbl/services/time.h"
-#include "process_state/app_state/app_state.h"
-#include "process_state/worker_state/worker_state.h"
-#include "syscall/syscall.h"
-#include "syscall/syscall_internal.h"
+#include <applib/pbl_std/pbl_std.h>
+#include <applib/app_logging.h>
+#include <applib/applib_malloc.auto.h>
+#include <kernel/memory_layout.h>
+#include <pbl/services/time.h>
+#include <process_state/app_state/app_state.h>
+#include <process_state/worker_state/worker_state.h>
+#include <syscall/syscall.h>
+#include <syscall/syscall_internal.h>
 #include <pbl/logging/logging.h>
-#include "pbl/kernel/compiler.h"
+#include <pbl/kernel/compiler.h>
 
 // Time
 time_t pbl_override_time(time_t *tloc) {
@@ -25,7 +25,7 @@ time_t pbl_override_time(time_t *tloc) {
 // Manually construct double to avoid requiring soft-fp
 static double prv_time_to_double(time_t time) {
   // time_t is 32bit signed int, convert it manually
-#ifndef UNITTEST
+#if !UNITTEST && __SIZEOF_POINTER__ == 4
   _Static_assert(sizeof(time_t) == 4, "Conversion depends on 32bit time_t");
 #endif
 

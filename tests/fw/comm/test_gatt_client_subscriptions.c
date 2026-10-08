@@ -3,31 +3,31 @@
 
 #include <pbl/bluetooth/gatt.h>
 
-#include "comm/ble/gatt_client_subscriptions.h"
-#include "comm/ble/gap_le_connection.h"
-#include "comm/ble/gap_le_task.h"
-#include "comm/ble/gatt_service_changed.h"
+#include <comm/ble/gatt_client_subscriptions.h>
+#include <comm/ble/gap_le_connection.h>
+#include <comm/ble/gap_le_task.h>
+#include <comm/ble/gatt_service_changed.h>
 
-#include "clar.h"
+#include <clar.h>
 
 #include <pbl/btutil/bt_device.h>
 #include <pbl/btutil/bt_uuid.h>
 
-#include "pbl/kernel/sem.h"
+#include <pbl/kernel/sem.h>
 
 // Fakes
 ///////////////////////////////////////////////////////////
 
-#include "fake_events.h"
-#include "fake_pbl_malloc.h"
-#include "fake_bt_gatt.h"
-#include "fake_new_timer.h"
-#include "fake_sem.h"
-#include "fake_system_task.h"
+#include <fake_events.h>
+#include <fake_pbl_malloc.h>
+#include <fake_bt_gatt.h>
+#include <fake_new_timer.h>
+#include <fake_sem.h>
+#include <fake_system_task.h>
 
-#include "fake_event_gatt_service_buffer.h"
+#include <fake_event_gatt_service_buffer.h>
 
-#include "stubs_regular_timer.h"
+#include <stubs_regular_timer.h>
 
 static enum pbl_bt_errno s_write_descriptor_cccd_result;
 static pbl_bt_descriptor_t s_last_cccd_ref;
@@ -49,13 +49,13 @@ void fake_kernel_malloc_mark_assert_equal(void) {
 // Stubs
 ///////////////////////////////////////////////////////////
 
-#include "stubs_analytics.h"
-#include "stubs_bt_lock.h"
-#include "stubs_logging.h"
-#include "stubs_mutex.h"
-#include "stubs_passert.h"
-#include "stubs_rand_ptr.h"
-#include "stubs_tick.h"
+#include <stubs_analytics.h>
+#include <stubs_bt_lock.h>
+#include <stubs_logging.h>
+#include <stubs_mutex.h>
+#include <stubs_passert.h>
+#include <stubs_rand_ptr.h>
+#include <stubs_tick.h>
 
 void core_dump_reset(bool is_forced) {
 }
@@ -789,8 +789,6 @@ void test_gatt_client_subscriptions__consume_but_buffer_client_buffer_null(void)
 }
 
 void test_gatt_client_subscriptions__notification_consume_without_notification(void) {
-  pbl_bt_characteristic_t characteristic = prv_get_indicatable_characteristic();
-
   uint16_t value_length;
   GATTBufferedNotificationHeader header = {
     .characteristic = PBL_BT_CHARACTERISTIC_INVALID,
@@ -892,8 +890,10 @@ void test_gatt_client_subscriptions__cleanup_by_att_handle_range(void) {
 
   cl_assert(s_connection->gatt_subscriptions != NULL);
 
-  struct pbl_bt_att_handle_range range;
-  fake_gatt_get_bp_att_handle_range(&range.start, &range.end);
+  uint16_t start;
+  uint16_t end;
+  fake_gatt_get_bp_att_handle_range(&start, &end);
+  struct pbl_bt_att_handle_range range = {.start = start, .end = end};
 
   struct pbl_bt_att_handle_range bogus_range = {.start = range.end + 1, .end = range.end + 5};
 

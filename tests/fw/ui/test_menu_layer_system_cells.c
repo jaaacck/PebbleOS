@@ -1,28 +1,28 @@
 /* SPDX-FileCopyrightText: 2024 Google LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "applib/graphics/framebuffer.h"
-#include "applib/graphics/graphics.h"
-#include "applib/ui/menu_layer.h"
-#include "applib/ui/status_bar_layer.h"
-#include "kernel/pebble_tasks.h"
-#include "process_management/app_install_types.h"
-#include "resource/resource.h"
-#include "resource/resource_ids.auto.h"
-#include "shell/system_theme.h"
-#include "applib/graphics/raw_image.h"
-#include "pbl/util/size.h"
+#include <applib/graphics/framebuffer.h>
+#include <applib/graphics/graphics.h>
+#include <applib/ui/menu_layer.h>
+#include <applib/ui/status_bar_layer.h>
+#include <kernel/pebble_tasks.h>
+#include <process_management/app_install_types.h>
+#include <resource/resource.h>
+#include <resource/resource_ids.auto.h>
+#include <shell/system_theme.h>
+#include <applib/graphics/raw_image.h>
+#include <pbl/util/size.h>
 
-#include "clar.h"
+#include <clar.h>
 
 #include <stdio.h>
 
 // Fakes
 /////////////////////
 
-#include "fake_resource_syscalls.h"
-#include "fake_spi_flash.h"
-#include "fixtures/load_test_resources.h"
+#include <fake_resource_syscalls.h>
+#include <fake_spi_flash.h>
+#include <fixtures/load_test_resources.h>
 
 static bool s_cell_is_highlighted = false;
 
@@ -64,31 +64,31 @@ AppInstallId sys_process_manager_get_current_process_id(void) {
 // Stubs
 /////////////////////
 
-#include "stubs_analytics.h"
-#include "stubs_app_install_manager.h"
-#include "stubs_app_state.h"
-#include "stubs_bootbits.h"
-#include "stubs_compiled_with_legacy2_sdk.h"
-#include "stubs_content_indicator.h"
-#include "stubs_heap.h"
-#include "stubs_logging.h"
-#include "stubs_memory_layout.h"
-#include "stubs_mutex.h"
-#include "stubs_passert.h"
-#include "stubs_pbl_malloc.h"
-#include "stubs_print.h"
-#include "stubs_process_manager.h"
-#include "stubs_serial.h"
-#include "stubs_shell_prefs.h"
-#include "stubs_sleep.h"
+#include <stubs_analytics.h>
+#include <stubs_app_install_manager.h>
+#include <stubs_app_state.h>
+#include <stubs_bootbits.h>
+#include <stubs_compiled_with_legacy2_sdk.h>
+#include <stubs_content_indicator.h>
+#include <stubs_heap.h>
+#include <stubs_logging.h>
+#include <stubs_memory_layout.h>
+#include <stubs_mutex.h>
+#include <stubs_passert.h>
+#include <stubs_pbl_malloc.h>
+#include <stubs_print.h>
+#include <stubs_process_manager.h>
+#include <stubs_serial.h>
+#include <stubs_shell_prefs.h>
+#include <stubs_sleep.h>
 // Hide the PBL_WEAK stub so the controllable strong definition above owns the real symbol
 #define sys_process_manager_get_current_process_id \
   prv_stubbed_sys_process_manager_get_current_process_id
-#include "stubs_syscalls.h"
+#include <stubs_syscalls.h>
 #undef sys_process_manager_get_current_process_id
-#include "stubs_task_wdt.h"
-#include "stubs_ui_window.h"
-#include "stubs_unobstructed_area.h"
+#include <stubs_task_wdt.h>
+#include <stubs_ui_window.h>
+#include <stubs_unobstructed_area.h>
 
 void window_long_click_subscribe(ButtonId button_id, uint16_t delay_ms, ClickHandler down_handler,
                                  ClickHandler up_handler) {
@@ -511,10 +511,11 @@ void test_menu_layer_system_cells__third_party_app_keeps_platform_default(void) 
   const int16_t default_basic_cell_height = menu_cell_basic_cell_height();
   const int16_t default_small_cell_height = menu_cell_small_cell_height();
   const int16_t default_horizontal_inset = menu_cell_basic_horizontal_inset();
-  // Both test platforms default to PreferredContentSizeLarge
-  cl_assert_equal_i(default_basic_cell_height, 61);
-  cl_assert_equal_i(default_small_cell_height, 42);
-  cl_assert_equal_i(default_horizontal_inset, 10);
+  // 144x168 displays default to Medium, the others to Large
+  const bool default_is_medium = (PreferredContentSizeDefault == PreferredContentSizeMedium);
+  cl_assert_equal_i(default_basic_cell_height, default_is_medium ? 44 : 61);
+  cl_assert_equal_i(default_small_cell_height, default_is_medium ? 34 : 42);
+  cl_assert_equal_i(default_horizontal_inset, default_is_medium ? 5 : 10);
 
   for (PreferredContentSize size = PreferredContentSizeSmall; size < NumPreferredContentSizes;
        size++) {
@@ -538,9 +539,11 @@ static unsigned int prv_count_basic_cell_foreground(int16_t cell_height, const c
                                                     const char *subtitle, GFont subtitle_font,
                                                     GBitmap *icon, bool selected) {
   const int16_t width = 144;
-  GBitmap *bitmap = gbitmap_create_blank(GSize(width, 128), GBitmapFormat8Bit);
+  GBitmap *bitmap = gbitmap_create_blank(GSize(width, 128),
+                                         PBL_IF_COLOR_ELSE(GBitmapFormat8Bit, GBitmapFormat1Bit));
   cl_assert(bitmap);
-  memset(bitmap->addr, GColorWhiteARGB8, bitmap->row_size_bytes * bitmap->bounds.size.h);
+  memset(bitmap->addr, PBL_IF_COLOR_ELSE(GColorWhiteARGB8, 0xff),
+         bitmap->row_size_bytes * bitmap->bounds.size.h);
 
   const GBitmap previous_bitmap = s_ctx.dest_bitmap;
   const GRect previous_clip_box = s_ctx.draw_state.clip_box;
@@ -562,7 +565,8 @@ static unsigned int prv_count_basic_cell_foreground(int16_t cell_height, const c
   for (int16_t y = 0; y < bitmap->bounds.size.h; y++) {
     const uint8_t *row = (uint8_t *)bitmap->addr + y * bitmap->row_size_bytes;
     for (int16_t x = 0; x < width; x++) {
-      foreground_pixels += row[x] == GColorBlackARGB8;
+      foreground_pixels +=
+          PBL_IF_COLOR_ELSE(row[x] == GColorBlackARGB8, !((row[x / 8] >> (x % 8)) & 1));
     }
   }
 

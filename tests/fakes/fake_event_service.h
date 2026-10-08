@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include "clar_asserts.h"
+#include <clar_asserts.h>
 
-#include "applib/event_service_client.h"
+#include <applib/event_service_client.h>
 #include "fake_events.h"
 
 static EventServiceInfo s_event_handler[PEBBLE_NUM_EVENTS];
@@ -20,7 +20,7 @@ void event_service_client_unsubscribe(EventServiceInfo *service_info) {
 }
 
 void fake_event_service_init(void) {
-  memset(s_event_handler, sizeof(s_event_handler), 0);
+  memset(s_event_handler, 0, sizeof(s_event_handler));
 }
 
 void fake_event_service_handle_last(void) {

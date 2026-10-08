@@ -5,10 +5,10 @@
 
 #include "fake_pbl_malloc.h"
 
-#include "pbl/services/new_timer/new_timer.h"
-#include "pbl/util/list.h"
+#include <pbl/services/new_timer/new_timer.h>
+#include <pbl/util/list.h>
 #include <pbl/drivers/rtc.h>
-#include "system/passert.h"
+#include <system/passert.h>
 #include <stdio.h>
 
 // Structure of a timer
@@ -77,7 +77,7 @@ static void prv_print_idle_list(char* title) {
 
 static bool prv_id_list_filter(ListNode *node, void *data) {
   StubTimer *timer = (StubTimer *)node;
-  return timer->id == (uint32_t)data;
+  return timer->id == (uint32_t)(uintptr_t)data;
 }
 
 static StubTimer *prv_find_timer(TimerID timer_id) {

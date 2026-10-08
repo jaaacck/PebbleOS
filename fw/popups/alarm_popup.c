@@ -3,35 +3,35 @@
 
 #include "alarm_popup.h"
 
-#include "applib/ui/dialogs/dialog.h"
-#include "applib/ui/dialogs/simple_dialog.h"
-#include "applib/ui/dialogs/actionable_dialog.h"
-#include "applib/ui/vibes.h"
-#include "kernel/event_loop.h"
-#include "kernel/low_power.h"
-#include "kernel/pbl_malloc.h"
-#include "kernel/ui/modals/modal_manager.h"
-#include "resource/resource_ids.auto.h"
+#include <applib/ui/dialogs/dialog.h>
+#include <applib/ui/dialogs/simple_dialog.h>
+#include <applib/ui/dialogs/actionable_dialog.h>
+#include <applib/ui/vibes.h>
+#include <kernel/event_loop.h>
+#include <kernel/low_power.h>
+#include <kernel/pbl_malloc.h>
+#include <kernel/ui/modals/modal_manager.h>
+#include <resource/resource_ids.auto.h>
 #include <pbl/logging/logging.h>
-#include "pbl/services/clock.h"
-#include "pbl/services/i18n/i18n.h"
-#include "pbl/services/light.h"
-#include "pbl/services/new_timer/new_timer.h"
-#include "pbl/services/alarms/alarm.h"
-#include "pbl/util/units.h"
+#include <pbl/services/clock.h>
+#include <pbl/services/i18n/i18n.h>
+#include <pbl/services/light.h>
+#include <pbl/services/new_timer/new_timer.h>
+#include <pbl/services/alarms/alarm.h>
+#include <pbl/util/units.h>
 
 #include <stdio.h>
 
-#include "pbl/services/vibes/vibe_client.h"
-#include "pbl/services/vibes/vibe_score.h"
+#include <pbl/services/vibes/vibe_client.h>
+#include <pbl/services/vibes/vibe_score.h>
 
 #ifdef CONFIG_SPEAKER
-#include "applib/event_service_client.h"
-#include "kernel/events.h"
-#include "pbl/services/notifications/alerts_preferences_private.h"
-#include "pbl/services/speaker/speaker_finish_reason.h"
-#include "pbl/services/speaker/speaker_service.h"
-#include "services/alarms/alarm_tones.h"
+#include <applib/event_service_client.h>
+#include <kernel/events.h>
+#include <pbl/services/notifications/alerts_preferences_private.h>
+#include <pbl/services/speaker/speaker_finish_reason.h>
+#include <pbl/services/speaker/speaker_service.h>
+#include <services/alarms/alarm_tones.h>
 #include <time.h>
 #endif
 
@@ -354,7 +354,8 @@ void alarm_popup_push_window(PebbleAlarmClockEvent *event) {
   Dialog *dialog = actionable_dialog_get_dialog(s_alarm_popup_data->alarm_popup);
   char display_time[16];
   struct tm alarm_tm;
-  localtime_r(&event->alarm_time, &alarm_tm);
+  const time_t alarm_time = event->alarm_time;
+  localtime_r(&alarm_time, &alarm_tm);
   if (clock_is_24h_style()) {
     strftime(display_time, 16, "%H:%M", &alarm_tm);
   } else {

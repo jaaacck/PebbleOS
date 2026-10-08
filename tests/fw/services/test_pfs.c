@@ -5,45 +5,44 @@
 #include <stdlib.h>
 
 #include <pbl/drivers/flash.h>
-#include "flash_region/flash_region.h"
-#include "pbl/services/filesystem/pfs.h"
-#include "pbl/services/filesystem/flash_translation.h"
+#include <flash_region/flash_region.h>
+#include <pbl/services/filesystem/pfs.h>
+#include <pbl/services/filesystem/flash_translation.h>
 #include <pbl/logging/logging.h>
-#include "system/passert.h"
-#include "pbl/util/math.h"
-#include "pbl/util/size.h"
+#include <system/passert.h>
+#include <pbl/util/math.h>
+#include <pbl/util/size.h>
 
-#include "clar.h"
+#include <clar.h>
 
-#include "fake_spi_flash.h"
-#include "fake_rtc.h"
-#include "stubs_analytics.h"
-#include "stubs_logging.h"
-#include "stubs_mutex.h"
-#include "stubs_passert.h"
-#include "stubs_pbl_malloc.h"
-#include "stubs_pebble_tasks.h"
-#include "stubs_print.h"
-#include "stubs_serial.h"
-#include "stubs_sleep.h"
-#include "stubs_task_wdt.h"
+#include <fake_spi_flash.h>
+#include <fake_rtc.h>
+#include <stubs_analytics.h>
+#include <stubs_logging.h>
+#include <stubs_mutex.h>
+#include <stubs_passert.h>
+#include <stubs_pbl_malloc.h>
+#include <stubs_pebble_tasks.h>
+#include <stubs_print.h>
+#include <stubs_serial.h>
+#include <stubs_sleep.h>
+#include <stubs_task_wdt.h>
 
 #define PFS_SECTOR_SIZE 4096
 
 // a - 4K file full of 1's
 static const char *const TEST_FILE_A_NAME = "a";
-static const size_t TEST_FILE_A_SIZE = 4096;
+#define TEST_FILE_A_SIZE 4096
 static char s_test_file_a[TEST_FILE_A_SIZE];
 
 // b - 0K file for appending
 static const char *const TEST_FILE_B_NAME = "b";
-static const size_t TEST_FILE_B_SIZE = 0;
-static const size_t TEST_FILE_B_APPEND_SIZE = 8000;
+#define TEST_FILE_B_APPEND_SIZE 8000
 static char s_test_file_b[TEST_FILE_B_APPEND_SIZE];
 
 // c - space to perform non-append writes
 static const char *const TEST_FILE_C_NAME = "c";
-static const size_t TEST_FILE_C_SIZE = 9001; // it's over 9000!
+#define TEST_FILE_C_SIZE 9001 // it's over 9000!
 static char s_test_file_c[TEST_FILE_C_SIZE];
 
 static uint32_t num_pages(void) {

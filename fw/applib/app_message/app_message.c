@@ -1,11 +1,11 @@
 /* SPDX-FileCopyrightText: 2024 Google LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "applib/app_message/app_message.h"
-#include "applib/app_message/app_message_internal.h"
-#include "process_state/app_state/app_state.h"
-#include "pbl/services/comm_session/protocol.h"
-#include "syscall/syscall.h"
+#include <applib/app_message/app_message.h>
+#include <applib/app_message/app_message_internal.h>
+#include <process_state/app_state/app_state.h>
+#include <pbl/services/comm_session/protocol.h>
+#include <syscall/syscall.h>
 #include <pbl/logging/logging.h>
 
 // -------- Initialization ---------------------------------------------------------------------- //
@@ -161,7 +161,7 @@ AppMessageResult app_message_open(const uint32_t size_inbound, const uint32_t si
   // We're making this assumption in this file; here's as good a place to check it as any.
   // It's probably not super-bad if this isn't true, but we'll have type casts between different
   // sizes without over/underflow verification.
-#ifndef UNITTEST
+#if !UNITTEST && __SIZEOF_POINTER__ == 4
   _Static_assert(sizeof(size_t) == sizeof(uint32_t), "sizeof(size_t) != sizeof(uint32_t)");
 #endif
 

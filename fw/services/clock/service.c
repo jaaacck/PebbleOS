@@ -1,36 +1,36 @@
 /* SPDX-FileCopyrightText: 2024 Google LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "pbl/services/clock.h"
+#include <pbl/services/clock.h>
 
 #include <pbl/drivers/rtc.h>
-#include "kernel/events.h"
-#include "pbl/services/comm_session/session.h"
-#include "pbl/services/i18n/i18n.h"
-#include "pbl/services/regular_timer.h"
-#include "pbl/services/alarms/alarm.h"
-#include "pbl/services/timezone_database.h"
-#include "shell/prefs.h"
-#include "syscall/syscall.h"
-#include "syscall/syscall_internal.h"
+#include <kernel/events.h>
+#include <pbl/services/comm_session/session.h>
+#include <pbl/services/i18n/i18n.h>
+#include <pbl/services/regular_timer.h>
+#include <pbl/services/alarms/alarm.h>
+#include <pbl/services/timezone_database.h>
+#include <shell/prefs.h>
+#include <syscall/syscall.h>
+#include <syscall/syscall_internal.h>
 #include <pbl/logging/logging.h>
-#include "pbl/kernel/compiler.h"
-#include "pbl/util/testing.h"
-#include "pbl/util/math.h"
-#include "pbl/util/byteorder.h"
-#include "pbl/util/size.h"
-#include "pbl/util/string.h"
-#include "pbl/services/analytics/analytics.h"
-#include "pbl/services/time.h"
-#include "pbl/util/time.h"
-#include "pbl/util/units.h"
+#include <pbl/kernel/compiler.h>
+#include <pbl/util/testing.h>
+#include <pbl/util/math.h>
+#include <pbl/util/byteorder.h>
+#include <pbl/util/size.h>
+#include <pbl/util/string.h>
+#include <pbl/services/analytics/analytics.h>
+#include <pbl/services/time.h>
+#include <pbl/util/time.h>
+#include <pbl/util/units.h>
 
 #ifndef CONFIG_RECOVERY_FW
-#include "pbl/services/notifications/do_not_disturb.h"
-#include "pbl/services/notifications/alerts.h"
-#include "pbl/services/notifications/alerts_preferences_private.h"
-#include "pbl/services/vibes/vibe_client.h"
-#include "pbl/services/vibes/vibe_score.h"
+#include <pbl/services/notifications/do_not_disturb.h>
+#include <pbl/services/notifications/alerts.h>
+#include <pbl/services/notifications/alerts_preferences_private.h>
+#include <pbl/services/vibes/vibe_client.h>
+#include <pbl/services/vibes/vibe_score.h>
 #endif
 
 #include <stdio.h>
@@ -67,13 +67,13 @@ static void prv_handle_timezone_set(TimezoneInfo *tz_info) {
 typedef struct PBL_PACKED {
   // This struct is packed because it mirrors the endpoint definition:
   // https://pebbletechnology.atlassian.net/wiki/pages/viewpage.action?pageId=491698#PebbleProtocol(BluetoothSerial)-0xb(11)-Time/Clock(bigendian)
-  time_t utc_time;                        // UTC timestamp
+  int32_t utc_time;                       // UTC timestamp
   int16_t utc_offset_min;                 // local timestamp - UTC timestamp in mins
   int8_t region_name_len;                 // timezone name length
   char region_name[TIMEZONE_NAME_LENGTH]; // timezone name string
 } TimezoneCBData;
 
-#ifndef UNITTEST
+#if !UNITTEST && __SIZEOF_POINTER__ == 4
 _Static_assert(sizeof(time_t) == 4, "Sizeof time_t does not match endpoint definition");
 #endif
 
@@ -309,10 +309,11 @@ static void prv_handle_set_utc_and_timezone_msg(TimezoneCBData *tz_data) {
     // Manual time mode: ignore time set from phone entirely
     return;
   }
+  time_t utc_time = tz_data->utc_time;
   if (clock_timezone_source_is_manual()) {
-    prv_update_time_info_and_generate_event(&tz_data->utc_time, NULL);
+    prv_update_time_info_and_generate_event(&utc_time, NULL);
   } else {
-    prv_update_time_info_and_generate_event(&tz_data->utc_time, &tz_info);
+    prv_update_time_info_and_generate_event(&utc_time, &tz_info);
   }
 }
 
@@ -1061,8 +1062,26 @@ static int prv_cmd_tz_clear(const struct pbl_shell *sh, size_t argc, char **argv
   return 0;
 }
 
+#ifndef CONFIG_RECOVERY_FW
+static int prv_cmd_show(const struct pbl_shell *sh, size_t argc, char **argv) {
+  const time_t utc = rtc_get_time();
+  char region[TIMEZONE_NAME_LENGTH];
+  clock_get_timezone_region(region, sizeof(region));
+
+  pbl_shell_print(sh, "UTC: %" PRIi32, (int32_t)utc);
+  pbl_shell_print(sh, "Local: %" PRIi32, (int32_t)time_utc_to_local(utc));
+  pbl_shell_print(sh, "Offset: %" PRIi32, time_get_gmtoffset());
+  pbl_shell_print(sh, "DST: %d", time_get_isdst(utc));
+  pbl_shell_print(sh, "Region: %s", clock_is_timezone_set() ? region : "");
+  return 0;
+}
+#endif
+
 PBL_SHELL_SUBCMD_SET_CREATE(sub_time);
 PBL_SHELL_CMD_REGISTER(time, sub_time, "Time and timezone", NULL);
 PBL_SHELL_SUBCMD_ADD(sub_time, set, NULL, "Set the time <unix_timestamp>", prv_cmd_set, 2, 0);
 PBL_SHELL_SUBCMD_ADD(sub_time, tz_clear, NULL, "Clear the timezone", prv_cmd_tz_clear, 0, 0);
+#ifndef CONFIG_RECOVERY_FW
+PBL_SHELL_SUBCMD_ADD(sub_time, show, NULL, "Show the time and timezone", prv_cmd_show, 0, 0);
+#endif
 #endif

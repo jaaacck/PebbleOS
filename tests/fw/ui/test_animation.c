@@ -1,17 +1,17 @@
 /* SPDX-FileCopyrightText: 2024 Google LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "clar.h"
+#include <clar.h>
 
-#include "applib/graphics/gtypes.h"
-#include "applib/graphics/gtransform.h"
-#include "applib/ui/layer.h"
-#include "applib/ui/property_animation.h"
-#include "applib/ui/property_animation_private.h"
-#include "applib/ui/animation.h"
-#include "applib/ui/animation_private.h"
-#include "applib/legacy2/ui/animation_private_legacy2.h"
-#include "pbl/util/math.h"
+#include <applib/graphics/gtypes.h>
+#include <applib/graphics/gtransform.h>
+#include <applib/ui/layer.h>
+#include <applib/ui/property_animation.h>
+#include <applib/ui/property_animation_private.h>
+#include <applib/ui/animation.h>
+#include <applib/ui/animation_private.h>
+#include <applib/legacy2/ui/animation_private_legacy2.h>
+#include <pbl/util/math.h>
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -19,25 +19,25 @@
 
 ///////////////////////////////////////////////////////////
 // Stubs
-#include "stubs_logging.h"
-#include "stubs_passert.h"
+#include <stubs_logging.h>
+#include <stubs_passert.h>
 
-#include "stubs_app_state.h"
-#include "stubs_app_timer.h"
-#include "stubs_irq.h"
-#include "stubs_heap.h"
-#include "stubs_mutex.h"
-#include "stubs_resources.h"
-#include "stubs_serial.h"
-#include "stubs_syscalls.h"
-#include "stubs_unobstructed_area.h"
+#include <stubs_app_state.h>
+#include <stubs_app_timer.h>
+#include <stubs_irq.h>
+#include <stubs_heap.h>
+#include <stubs_mutex.h>
+#include <stubs_resources.h>
+#include <stubs_serial.h>
+#include <stubs_syscalls.h>
+#include <stubs_unobstructed_area.h>
 
 // Fakes
-#include "fake_new_timer.h"
-#include "fake_pebble_tasks.h"
-#include "fake_pbl_malloc.h"
-#include "fake_rtc.h"
-#include "fake_events.h"
+#include <fake_new_timer.h>
+#include <fake_pebble_tasks.h>
+#include <fake_pbl_malloc.h>
+#include <fake_rtc.h>
+#include <fake_events.h>
 
 #define TEST_INCLUDE_BASIC
 #define TEST_INCLUDE_COMPLEX
@@ -296,7 +296,7 @@ static AnimTestHandlerEntry *prv_last_handler_entry(AnimTestHandlerHistory *hist
 static uint32_t prv_last_update_distance(Animation *animation) {
   AnimTestHandlerEntry *entry = prv_last_handler_entry(&s_update_handler_calls, animation);
   if (entry) {
-    return (uint32_t)entry->context;
+    return (uint32_t)(uintptr_t)entry->context;
   } else {
     return 0;
   }
@@ -309,21 +309,21 @@ static uint32_t prv_last_update_distance(Animation *animation) {
 // Started handler
 static void prv_started_handler(Animation *animation, void *context) {
   prv_add_handler_entry(&s_started_handler_calls, animation, false, context);
-  DPRINTF("%" PRIu64 " ms: Executing started handler for %d\n", prv_now_ms(), (int)animation);
+  DPRINTF("%" PRIu64 " ms: Executing started handler for %p\n", prv_now_ms(), (void *)animation);
 }
 
 // --------------------------------------------------------------------------------------
 // Stopped handler
 static void prv_stopped_handler(Animation *animation, bool finished, void *context) {
   prv_add_handler_entry(&s_stopped_handler_calls, animation, finished, context);
-  DPRINTF("%" PRIu64 " ms: Executing stopped handler for %d\n", prv_now_ms(), (int)animation);
+  DPRINTF("%" PRIu64 " ms: Executing stopped handler for %p\n", prv_now_ms(), (void *)animation);
 }
 
 // --------------------------------------------------------------------------------------
 // Stopped handler with check for finish
 static void prv_stopped_handler_check_finished(Animation *animation, bool finished, void *context) {
   prv_add_handler_entry(&s_stopped_handler_calls, animation, finished, context);
-  DPRINTF("%" PRIu64 " ms: Executing stopped handler for %d\n", prv_now_ms(), (int)animation);
+  DPRINTF("%" PRIu64 " ms: Executing stopped handler for %p\n", prv_now_ms(), (void *)animation);
   cl_assert(finished);
   AnimationPrivate *animation_private = animation_private_animation_find(animation);
   if (animation_private) {
@@ -338,12 +338,12 @@ static void prv_stopped_handler_reschedule(Animation *animation, bool finished, 
   prv_add_handler_entry(&s_stopped_handler_calls, animation, finished, context);
 
   if (s_stopped_handler_calls.num_calls == 1) {
-    DPRINTF("%" PRIu64 " ms: Rescheduling from stopped handler for %d\n", prv_now_ms(),
-            (int)animation);
+    DPRINTF("%" PRIu64 " ms: Rescheduling from stopped handler for %p\n", prv_now_ms(),
+            (void *)animation);
     animation_schedule(animation);
   } else {
-    DPRINTF("%" PRIu64 " ms: NOT rescheduling from stopped handler for %d\n", prv_now_ms(),
-            (int)animation);
+    DPRINTF("%" PRIu64 " ms: NOT rescheduling from stopped handler for %p\n", prv_now_ms(),
+            (void *)animation);
   }
 }
 
@@ -351,14 +351,14 @@ static void prv_stopped_handler_reschedule(Animation *animation, bool finished, 
 // setup handler
 void prv_setup_handler(Animation *animation) {
   prv_add_handler_entry(&s_setup_handler_calls, animation, false, NULL);
-  DPRINTF("%" PRIu64 " ms: Executing setup handler for %d\n", prv_now_ms(), (int)animation);
+  DPRINTF("%" PRIu64 " ms: Executing setup handler for %p\n", prv_now_ms(), (void *)animation);
 }
 
 // --------------------------------------------------------------------------------------
 // teardown handler
 void prv_teardown_handler(Animation *animation) {
   prv_add_handler_entry(&s_teardown_handler_calls, animation, false, NULL);
-  DPRINTF("%" PRIu64 " ms: Executing teardown handler for %d\n", prv_now_ms(), (int)animation);
+  DPRINTF("%" PRIu64 " ms: Executing teardown handler for %p\n", prv_now_ms(), (void *)animation);
 }
 
 // --------------------------------------------------------------------------------------
@@ -373,8 +373,8 @@ void prv_update_handler(Animation *animation, const AnimationProgress distance) 
 
   prv_add_handler_entry(&s_update_handler_calls, animation, false,
                         (void *)(uintptr_t)distance /*context*/);
-  DPRINTF("%" PRIu64 " ms: Executing update handler for %d, distance: %d\n", prv_now_ms(),
-          (int)animation, (int)distance);
+  DPRINTF("%" PRIu64 " ms: Executing update handler for %p, distance: %d\n", prv_now_ms(),
+          (void *)animation, (int)distance);
 }
 
 // --------------------------------------------------------------------------------------
@@ -761,11 +761,9 @@ void test_animation__property_gpoint(void) {
   animation_schedule(h);
 
   int max_loops = 20;
-  int num_loops = 0;
   uint64_t start_ms = prv_now_ms();
   uint64_t time_ms;
   while (s_stopped_handler_calls.num_calls == 0) {
-    num_loops++;
     prv_fire_animation_timer();
     time_ms = prv_now_ms();
     DPRINTF("%" PRIu64 ": value at: (%d, %d)\n", time_ms - start_ms, value.x, value.y);
@@ -1491,7 +1489,6 @@ static void prv_stopped_handler_unschedule(Animation *animation, bool finished, 
 // --------------------------------------------------------------------------------------
 // Test that animation_unschedule can be called from the stopped handler
 void test_animation__unschedule_from_stopped_handler(void) {
-  Animation *h;
   const int duration = 100;
 
   const AnimationHandlers handlers = {
@@ -1681,8 +1678,8 @@ void test_animation__simple_sequence(void) {
 
 static Animation *s_parent_for_sequence_unschedule_from_child;
 static void prv_unschedule_parent(Animation *animation, bool finished, void *context) {
-  DPRINTF("%" PRIu64 " ms: Executing prv_unschedule_parent handler for %d\n", prv_now_ms(),
-          (int)animation);
+  DPRINTF("%" PRIu64 " ms: Executing prv_unschedule_parent handler for %p\n", prv_now_ms(),
+          (void *)animation);
   animation_unschedule(s_parent_for_sequence_unschedule_from_child);
 }
 
@@ -1693,7 +1690,6 @@ void test_animation__sequence_unschedule_from_child(void) {
   const int duration_a = 300;
   const int duration_b = 500;
   const int play_count_b = 2;
-  int duration_total = duration_a + play_count_b * duration_b;
 
   // Create 2 animations
   Animation *a = prv_create_test_animation();
@@ -1860,7 +1856,7 @@ void test_animation__simple_sequence_set_elapsed(void) {
   // Make sure each animation got to the end
   AnimTestHandlerEntry *entry;
   entry = prv_last_handler_entry(&s_update_handler_calls, c);
-  cl_assert_equal_i((uint32_t)entry->context, ANIMATION_NORMALIZED_MAX);
+  cl_assert_equal_i((uint32_t)(uintptr_t)entry->context, ANIMATION_NORMALIZED_MAX);
 
 #endif
 }
@@ -3451,8 +3447,8 @@ void test_animation__spawn_of_already_scheduled(void) {
 void prv_update_unschedule_all_handler(Animation *animation, const AnimationProgress distance) {
   prv_add_handler_entry(&s_update_handler_calls, animation, false,
                         (void *)(uintptr_t)distance /*context*/);
-  DPRINTF("%" PRIu64 " ms: Executing update handler for %d, distance: %d\n", prv_now_ms(),
-          (int)animation, (int)distance);
+  DPRINTF("%" PRIu64 " ms: Executing update handler for %p, distance: %d\n", prv_now_ms(),
+          (void *)animation, (int)distance);
   if (distance > ANIMATION_NORMALIZED_MAX / 2) {
     animation_unschedule_all();
   }
@@ -3513,7 +3509,7 @@ void test_animation__unschedule_all_in_update_handler_without_auto_destroy(void)
 
 static void prv_stopped_unschedule_all_handler(Animation *animation, bool finished, void *context) {
   prv_add_handler_entry(&s_stopped_handler_calls, animation, finished, context);
-  DPRINTF("%" PRIu64 " ms: Executing stopped handler for %d\n", prv_now_ms(), (int)animation);
+  DPRINTF("%" PRIu64 " ms: Executing stopped handler for %p\n", prv_now_ms(), (void *)animation);
   animation_unschedule_all();
 }
 

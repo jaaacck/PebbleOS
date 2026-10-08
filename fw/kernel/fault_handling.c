@@ -1,46 +1,41 @@
 /* SPDX-FileCopyrightText: 2024 Google LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "pbl/kernel/irq.h"
-#include "pbl/kernel/sched.h"
-#include "pbl/kernel/thread.h"
-#include "kernel/core_dump.h"
-#include "kernel/fault_handling.h"
-#include "logging/logging_private.h"
-#include "process_management/process_manager.h"
-#include "process_management/app_manager.h"
-#include "process_management/worker_manager.h"
+#include <pbl/kernel/irq.h>
+#include <pbl/kernel/sched.h>
+#include <pbl/kernel/thread.h>
+#include <kernel/core_dump.h>
+#include <kernel/fault_handling.h>
+#include <logging/logging_private.h>
+#include <process_management/process_manager.h>
+#include <process_management/app_manager.h>
+#include <process_management/worker_manager.h>
 
-#include "applib/app_logging.h"
-#include "kernel/memory_layout.h"
-#include "pbl/mcu/interrupts.h"
-#include "pbl/mcu/privilege.h"
-#include "pbl/services/system_task.h"
-#include "process_state/app_state/app_state.h"
-#include "process_state/worker_state/worker_state.h"
-#include "syscall/syscall.h"
-#include "syscall/syscall_internal.h"
-#include "pbl/util/size.h"
+#include <applib/app_logging.h>
+#include <kernel/memory_layout.h>
+#include <pbl/mcu/interrupts.h>
+#include <pbl/mcu/privilege.h>
+#include <pbl/services/system_task.h>
+#include <process_state/app_state/app_state.h>
+#include <process_state/worker_state/worker_state.h>
+#include <syscall/syscall.h>
+#include <syscall/syscall_internal.h>
+#include <pbl/util/size.h>
 #include <pbl/logging/logging.h>
-#include "system/reboot_reason.h"
-#include "syscall/syscall.h"
+#include <system/reboot_reason.h>
+#include <syscall/syscall.h>
 
 #include <pbl/util/heap.h>
 
+#ifndef CONFIG_ARCH_POSIX
 #include <cmsis_core.h>
+#endif
 
 #include <stdint.h>
 #include <stdio.h>
 
-// These variables are assigned values when the watch faults
-// TODO PBL-PBL-36253: We should probably save these in CrashInfo in the future. Saved here because
-// they are easier to pull out through GDB and because we can keep the Bluetooth FW and Normal FW
-// fault handling the way they are now.
-static uint32_t s_fault_saved_sp;
-static uint32_t s_fault_saved_lr;
-static uint32_t s_fault_saved_pc;
-
 void enable_fault_handlers(void) {
+#ifndef CONFIG_ARCH_POSIX
   // NVIC_SetPriority() takes the unshifted priority; PBL_IRQ_PRIO_* are register values.
   const uint32_t prio = PBL_IRQ_PRIO_MAX_SYSCALL >> (8U - __NVIC_PRIO_BITS);
   NVIC_SetPriority(MemoryManagement_IRQn, prio);
@@ -54,6 +49,7 @@ void enable_fault_handlers(void) {
   SCB->CCR &= ~SCB_CCR_DIV_0_TRP_Msk;
   __DSB();
   __ISB();
+#endif
 }
 
 typedef struct CrashInfo {
@@ -72,12 +68,6 @@ CrashInfo make_crash_info_pc(uintptr_t pc) {
 
 CrashInfo make_crash_info_pc_lr(uintptr_t pc, uintptr_t lr) {
   return (CrashInfo){.pc = pc, .pc_known = true, .lr = lr, .lr_known = true};
-}
-
-static void prv_save_debug_registers(unsigned int *stacked_args) {
-  s_fault_saved_lr = (uint32_t)stacked_args[5];
-  s_fault_saved_pc = (uint32_t)stacked_args[6];
-  s_fault_saved_sp = (uint32_t)&stacked_args[8];
 }
 
 static void prv_log_app_lr_and_pc_system_task(void *data) {
@@ -181,7 +171,7 @@ PBL_NORETURN void trigger_oom_fault(size_t bytes, uint32_t lr, Heap *heap_ptr) {
     .code = RebootReasonCode_OutOfMemory,
     .heap_data = {
       .heap_alloc_lr = lr,
-      .heap_ptr = (uint32_t)heap_ptr,
+      .heap_ptr = (uint32_t)(uintptr_t)heap_ptr,
     }
   };
   reboot_reason_set(&reason);
@@ -229,6 +219,22 @@ DEFINE_SYSCALL(PBL_NORETURN void, sys_app_fault, uint32_t stashed_lr) {
   prv_kill_user_process(stashed_lr);
   for (;;) {
   } // Not Reached
+}
+
+// The hardware fault handlers; a native build gets signals instead.
+#ifndef CONFIG_ARCH_POSIX
+// These variables are assigned values when the watch faults
+// TODO PBL-PBL-36253: We should probably save these in CrashInfo in the future. Saved here because
+// they are easier to pull out through GDB and because we can keep the Bluetooth FW and Normal FW
+// fault handling the way they are now.
+static uint32_t s_fault_saved_sp;
+static uint32_t s_fault_saved_lr;
+static uint32_t s_fault_saved_pc;
+
+static void prv_save_debug_registers(unsigned int *stacked_args) {
+  s_fault_saved_lr = (uint32_t)stacked_args[5];
+  s_fault_saved_pc = (uint32_t)stacked_args[6];
+  s_fault_saved_sp = (uint32_t)&stacked_args[8];
 }
 
 static void hardware_fault_landing_zone(void) {
@@ -500,3 +506,4 @@ void UsageFault_Handler(void) {
       "mov r1, lr\n"
       "b %0\n" ::"i"(usagefault_handler_c));
 }
+#endif

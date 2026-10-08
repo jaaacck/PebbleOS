@@ -1,13 +1,13 @@
 /* SPDX-FileCopyrightText: 2024 Google LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "clar.h"
+#include <clar.h>
 
-#include "applib/app_message/app_message_internal.h"
-#include "kernel/events.h"
+#include <applib/app_message/app_message_internal.h>
+#include <kernel/events.h>
 #include <pbl/logging/logging.h>
-#include "pbl/kernel/compiler.h"
-#include "pbl/util/math.h"
+#include <pbl/kernel/compiler.h>
+#include <pbl/util/math.h>
 
 #include <stddef.h>
 #include <limits.h>
@@ -16,15 +16,15 @@ extern AppTimer *app_message_outbox_get_ack_nack_timer(void);
 
 // Stubs
 ////////////////////////////////////
-#include "stubs_logging.h"
-#include "stubs_passert.h"
-#include "stubs_rand_ptr.h"
-#include "fake_pbl_malloc.h"
+#include <stubs_logging.h>
+#include <stubs_passert.h>
+#include <stubs_rand_ptr.h>
+#include <fake_pbl_malloc.h>
 
 // Fakes
 ////////////////////////////////////
-#include "fake_app_timer.h"
-#include "fake_pebble_tasks.h"
+#include <fake_app_timer.h>
+#include <fake_pebble_tasks.h>
 
 // Structures and Externs
 ////////////////////////////////////
@@ -52,8 +52,8 @@ extern void app_message_monitor_reset(void);
 ////////////////////////////////////
 static const uint16_t ENDPOINT_ID = 0x30;
 
-static const uint16_t MAX_SIZE_INBOUND = 32;
-static const uint16_t MAX_SIZE_OUTBOUND = 32;
+#define MAX_SIZE_INBOUND  32
+#define MAX_SIZE_OUTBOUND 32
 
 static const char *TEST_DATA =
     "01234567890123456789012345678901234567890123456789"
@@ -167,7 +167,7 @@ static void prv_in_dropped_callback(AppMessageResult reason, void *context) {
 static void prv_send_ack_nack(uint16_t endpoint_id, const uint8_t *data, unsigned int length,
                               bool nack) {
   const int o = offsetof(AppMessage, payload[0].push.dictionary);
-  cl_assert_equal_i(length, o + dict_calc_buffer_size(1, MAX_DATA_SIZE));
+  cl_assert_equal_i(length, o + dict_calc_buffer_size(1, (size_t)MAX_DATA_SIZE));
   CommSession *session = s_fake_app_comm_session;
   AppMessage *message = (AppMessage *)data;
   AppMessage ack = {
@@ -193,7 +193,7 @@ static void prv_ack_sent_callback(uint16_t endpoint_id, const uint8_t *data, uns
 }
 
 static void prv_receive_test_data(uint8_t transaction_id, const bool oversized) {
-  const uint16_t dict_length = dict_calc_buffer_size(1, MAX_DATA_SIZE);
+  const uint16_t dict_length = dict_calc_buffer_size(1, (size_t)MAX_DATA_SIZE);
   const uint16_t message_length =
       offsetof(AppMessage, payload[0].push.dictionary) + +dict_length + (oversized ? 20 : 0);
   uint8_t buffer[message_length];

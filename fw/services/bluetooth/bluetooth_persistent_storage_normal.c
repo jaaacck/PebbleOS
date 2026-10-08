@@ -1,24 +1,24 @@
 /* SPDX-FileCopyrightText: 2024 Google LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "pbl/services/bluetooth/bluetooth_persistent_storage.h"
-#include "pbl/services/bluetooth/bluetooth_persistent_storage_debug.h"
+#include <pbl/services/bluetooth/bluetooth_persistent_storage.h>
+#include <pbl/services/bluetooth/bluetooth_persistent_storage_debug.h>
 
-#include "comm/ble/gap_le_connect.h"
-#include "comm/ble/gap_le_connection.h"
-#include "comm/ble/kernel_le_client/kernel_le_client.h"
-#include "kernel/event_loop.h"
-#include "kernel/pbl_malloc.h"
-#include "pbl/kernel/mutex.h"
-#include "pbl/services/bluetooth/pairability.h"
-#include "pbl/services/bluetooth/local_addr.h"
-#include "pbl/services/shared_prf_storage/shared_prf_storage.h"
-#include "pbl/services/settings/settings_file.h"
+#include <comm/ble/gap_le_connect.h>
+#include <comm/ble/gap_le_connection.h>
+#include <comm/ble/kernel_le_client/kernel_le_client.h>
+#include <kernel/event_loop.h>
+#include <kernel/pbl_malloc.h>
+#include <pbl/kernel/mutex.h>
+#include <pbl/services/bluetooth/pairability.h>
+#include <pbl/services/bluetooth/local_addr.h>
+#include <pbl/services/shared_prf_storage/shared_prf_storage.h>
+#include <pbl/services/settings/settings_file.h>
 #include <pbl/logging/logging.h>
-#include "system/passert.h"
-#include "pbl/kernel/compiler.h"
-#include "pbl/util/math.h"
-#include "pbl/util/string.h"
+#include <system/passert.h>
+#include <pbl/kernel/compiler.h>
+#include <pbl/util/math.h>
+#include <pbl/util/string.h>
 
 #include <pbl/bluetooth/bonding_sync.h>
 #include <pbl/btutil/bt_device.h>
@@ -28,9 +28,9 @@ PBL_LOG_MODULE_DECLARE(service_bluetooth, CONFIG_SERVICE_BLUETOOTH_LOG_LEVEL);
 
 #ifdef UNITTEST
 // Let the unittest define this using a header override:
-#include "pbl/services/bluetooth/bluetooth_persistent_storage_unittest_impl.h"
+#include <pbl/services/bluetooth/bluetooth_persistent_storage_unittest_impl.h>
 #else
-#include "pbl/services/bluetooth/bluetooth_persistent_storage_v2_impl.h"
+#include <pbl/services/bluetooth/bluetooth_persistent_storage_v2_impl.h>
 #endif
 
 //! The BtPersistBonding*Data structs can never shrink, only grow
@@ -531,7 +531,7 @@ typedef struct {
 static bool prv_is_pairing_info_equal_identity(const BtPersistLEPairingInfo *a,
                                                const struct pbl_bt_sm_pairing_info *b) {
   return (a->is_remote_identity_info_valid && b->is_remote_identity_info_valid &&
-          bt_device_equal(&a->identity.opaque, &b->identity.opaque) &&
+          bt_device_internal_equal(&a->identity, &b->identity) &&
           memcmp(&a->irk, &b->irk, sizeof(struct pbl_bt_sm_key)) == 0);
 }
 
@@ -905,8 +905,7 @@ static bool prv_find_by_addr_itr(SettingsFile *file, SettingsRecordInfo *info, v
   info->get_val(file, (uint8_t *)&stored_data, MIN((unsigned)info->val_len, sizeof(stored_data)));
 
   if (stored_data.type == BtPersistBondingTypeBLE &&
-      bt_device_equal(&itr_data->device.opaque,
-                      &stored_data.ble_data.pairing_info.identity.opaque)) {
+      bt_device_internal_equal(&itr_data->device, &stored_data.ble_data.pairing_info.identity)) {
     itr_data->irk_out = stored_data.ble_data.pairing_info.irk;
     strncpy(itr_data->name_out, stored_data.ble_data.name, PBL_BT_DEVICE_NAME_BUFFER_SIZE);
     itr_data->id_out = key;
@@ -1475,6 +1474,9 @@ static void prv_delete_all_pairings_itr(SettingsFile *old_file, SettingsFile *ne
 }
 
 void bt_persistent_storage_delete_all_pairings(void) {
+  // BLE bondings go one by one, so that the host and the pairability follow.
+  prv_delete_other_ble_bondings(PBL_BT_BONDING_ID_INVALID);
+
   prv_lock();
   {
     SettingsFile fd;

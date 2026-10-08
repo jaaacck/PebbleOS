@@ -3,14 +3,14 @@
 
 #include "app.h"
 
-#include "applib/ui/app_window_stack.h"
-#include "applib/ui/window_stack.h"
-#include "applib/ui/window_private.h"
-#include "pbl/mcu/fpu.h"
-#include "process_state/app_state/app_state.h"
-#include "syscall/syscall.h"
+#include <applib/ui/app_window_stack.h>
+#include <applib/ui/window_stack.h>
+#include <applib/ui/window_private.h>
+#include <pbl/mcu/fpu.h>
+#include <process_state/app_state/app_state.h>
+#include <syscall/syscall.h>
 #include <pbl/logging/logging.h>
-#include "system/profiler.h"
+#include <system/profiler.h>
 
 static void prv_render_app(void) {
   WindowStack *stack = app_state_get_window_stack();
@@ -136,7 +136,8 @@ static void prv_legacy2_status_bar_handler(PebbleEvent *e, void *context) {
     // a little logic to only force update when the minute changes
     ApplibInternalEventsInfo *events_info = app_state_get_applib_internal_events_info();
     struct tm currtime;
-    sys_localtime_r(&e->clock_tick.tick_time, &currtime);
+    const time_t tick_time = e->clock_tick.tick_time;
+    sys_localtime_r(&tick_time, &currtime);
     const int minute_of_day = (currtime.tm_hour * 60) + currtime.tm_min;
     if (events_info->minute_of_last_legacy2_statusbar_change != minute_of_day) {
       events_info->minute_of_last_legacy2_statusbar_change = minute_of_day;

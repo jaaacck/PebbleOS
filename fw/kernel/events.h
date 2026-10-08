@@ -3,40 +3,40 @@
 
 #pragma once
 
-#include "applib/accel_service.h"
-#include "applib/app_launch_button.h"
-#include "applib/app_launch_reason.h"
-#include "applib/app_outbox.h"
-#include "applib/bluetooth/ble_client.h"
-#include "applib/health_service.h"
-#include "applib/plugin_service.h"
-#include "applib/tick_timer_service.h"
-#include "applib/voice/dictation_session.h"
-#include "applib/ui/click.h"
-#include "apps/system/app_fetch_ui.h"
+#include <applib/accel_service.h>
+#include <applib/app_launch_button.h>
+#include <applib/app_launch_reason.h>
+#include <applib/app_outbox.h>
+#include <applib/bluetooth/ble_client.h>
+#include <applib/health_service.h>
+#include <applib/plugin_service.h>
+#include <applib/tick_timer_service.h>
+#include <applib/voice/dictation_session.h>
+#include <applib/ui/click.h>
+#include <apps/system/app_fetch_ui.h>
 #include <pbl/drivers/battery.h>
 #include <pbl/drivers/button_id.h>
-#include "process_management/app_install_types.h"
-#include "pbl/services/battery/battery_monitor.h"
-#include "pbl/services/bluetooth/bluetooth_ctl.h"
-#include "pbl/services/comm_session/session_remote_os.h"
-#include "pbl/services/comm_session/session_remote_version.h"
-#include "pbl/services/hrm/hrm_manager.h"
-#include "pbl/services/put_bytes/put_bytes.h"
-#include "pbl/services/touch/touch_event.h"
-#include "pbl/services/touch/gesture_event.h"
-#include "pbl/services/imu/units.h"
-#include "pbl/services/blob_db/api.h"
-#include "pbl/services/music.h"
-#include "pbl/services/notifications/notifications.h"
-#include "pbl/services/voice/voice.h"
-#include "pbl/services/wakeup.h"
-#include "pbl/services/timeline/peek.h"
-#include "pbl/services/timeline/reminders.h"
-#include "kernel/pebble_tasks.h"
-#include "pbl/kernel/compiler.h"
+#include <process_management/app_install_types.h>
+#include <pbl/services/battery/battery_monitor.h>
+#include <pbl/services/bluetooth/bluetooth_ctl.h>
+#include <pbl/services/comm_session/session_remote_os.h>
+#include <pbl/services/comm_session/session_remote_version.h>
+#include <pbl/services/hrm/hrm_manager.h>
+#include <pbl/services/put_bytes/put_bytes.h>
+#include <pbl/services/touch/touch_event.h>
+#include <pbl/services/touch/gesture_event.h>
+#include <pbl/services/imu/units.h>
+#include <pbl/services/blob_db/api.h>
+#include <pbl/services/music.h>
+#include <pbl/services/notifications/notifications.h>
+#include <pbl/services/voice/voice.h>
+#include <pbl/services/wakeup.h>
+#include <pbl/services/timeline/peek.h>
+#include <pbl/services/timeline/reminders.h>
+#include <kernel/pebble_tasks.h>
+#include <pbl/kernel/compiler.h>
 
-#include "pbl/kernel/msgq.h"
+#include <pbl/kernel/msgq.h>
 
 #include <pbl/bluetooth/types.h>
 
@@ -745,7 +745,7 @@ typedef struct PebbleWorkoutEvent {
   PebbleWorkoutEventType type;
 } PebbleWorkoutEvent;
 
-typedef struct PBL_PACKED {
+typedef struct PBL_PACKED PBL_ALIGNED(sizeof(void *)) {
   union PBL_PACKED {
     PebblePanicEvent panic;
     PebbleButtonEvent button;
@@ -834,8 +834,11 @@ bool event_try_put_from_process(PebbleTask task, PebbleEvent *event);
 
 bool event_take_timeout(PebbleEvent *event, pbl_timeout_t timeout);
 
-//! Return a reference to the allocated buffer within an event, if applicable
-void **event_get_buffer(PebbleEvent *event);
+//! Return the allocated buffer within an event, if applicable
+void *event_get_buffer(PebbleEvent *event);
+
+//! Clear the allocated buffer reference within an event, without freeing it
+void event_clear_buffer(PebbleEvent *event);
 
 //! De-initialize an event, freeing the allocated buffer if necessary
 void event_deinit(PebbleEvent *event);

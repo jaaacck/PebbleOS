@@ -7,14 +7,14 @@
 #include <pbl/bluetooth/advert.h>
 #include <pbl/bluetooth/init.h>
 
-#include "comm/bt_lock.h"
-#include "kernel/event_loop.h"
-#include "kernel/pbl_malloc.h"
-#include "pbl/services/analytics/analytics.h"
-#include "pbl/services/regular_timer.h"
+#include <comm/bt_lock.h>
+#include <kernel/event_loop.h>
+#include <kernel/pbl_malloc.h>
+#include <pbl/services/analytics/analytics.h>
+#include <pbl/services/regular_timer.h>
 #include <pbl/logging/logging.h>
-#include "system/passert.h"
-#include "pbl/util/list.h"
+#include <system/passert.h>
+#include <pbl/util/list.h>
 
 PBL_LOG_MODULE_DECLARE(bt, CONFIG_BT_LOG_LEVEL);
 
@@ -526,6 +526,7 @@ int8_t gap_le_advert_get_tx_power(void) {
     if (pbl_bt_advert_client_get_tx_power(&tx_power)) {
       s_tx_power_cached = tx_power;
     }
+    tx_power = s_tx_power_cached;
   }
   bt_unlock();
   return tx_power;

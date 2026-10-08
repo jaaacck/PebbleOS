@@ -1,14 +1,14 @@
 /* SPDX-FileCopyrightText: 2024 Google LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "applib/applib_resource_private.h"
+#include <applib/applib_resource_private.h>
 #include "gdraw_command.h"
 #include "gdraw_command_private.h"
 
-#include "applib/graphics/gpath.h"
-#include "system/passert.h"
-#include "syscall/syscall.h"
-#include "pbl/util/byteorder.h"
+#include <applib/graphics/gpath.h>
+#include <system/passert.h>
+#include <syscall/syscall.h>
+#include <pbl/util/byteorder.h>
 
 bool gdraw_command_resource_is_valid(ResAppNum app_num, uint32_t resource_id,
                                      uint32_t expected_signature, uint32_t *data_size) {
@@ -50,16 +50,15 @@ static void prv_draw_path(GContext *ctx, GDrawCommand *command) {
   if (command->num_points <= 1) {
     return;
   }
-  GPath path = {.num_points = command->num_points, .points = command->points};
   // draw all values of alpha, except fully transparent
   if ((command->fill_color.a != 0)) {
     graphics_context_set_fill_color(ctx, command->fill_color);
-    gpath_draw_filled(ctx, &path);
+    gpath_fill_internal(ctx, command->points, command->num_points);
   }
   if ((command->stroke_color.a != 0) && (command->stroke_width > 0)) {
     graphics_context_set_stroke_color(ctx, command->stroke_color);
     graphics_context_set_stroke_width(ctx, command->stroke_width);
-    gpath_draw_stroke(ctx, &path, command->path_open);
+    gpath_draw_outline_internal(ctx, command->points, command->num_points, command->path_open);
   }
 }
 

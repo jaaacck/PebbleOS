@@ -1,17 +1,17 @@
 /* SPDX-FileCopyrightText: 2024 Google LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "applib/ui/dialogs/dialog.h"
-#include "applib/ui/dialogs/simple_dialog.h"
+#include <applib/ui/dialogs/dialog.h>
+#include <applib/ui/dialogs/simple_dialog.h>
 #include <pbl/drivers/battery.h>
-#include "kernel/event_loop.h"
-#include "kernel/ui/modals/modal_manager.h"
-#include "pbl/services/accel_manager.h"
-#include "pbl/services/comm_session/session.h"
-#include "pbl/services/system_task.h"
+#include <kernel/event_loop.h>
+#include <kernel/ui/modals/modal_manager.h>
+#include <pbl/services/accel_manager.h>
+#include <pbl/services/comm_session/session.h>
+#include <pbl/services/system_task.h>
 #include <pbl/logging/logging.h>
-#include "pbl/kernel/compiler.h"
-#include "pbl/util/byteorder.h"
+#include <pbl/kernel/compiler.h>
+#include <pbl/util/byteorder.h>
 
 #include <inttypes.h>
 
@@ -22,6 +22,7 @@ PBL_LOG_MODULE_DEFINE(service_ping, CONFIG_SERVICE_PING_LOG_LEVEL);
 
 static time_t s_last_send_time;
 static bool s_is_ping_kernel_bg_callback_scheduled;
+static bool s_is_dialog_pushed;
 
 // ---------------------------------------------------------------------------------------------------------
 // Ping Pong structures
@@ -81,9 +82,15 @@ void ping_send_if_due(void) {
   s_is_ping_kernel_bg_callback_scheduled = true;
 }
 
+static void prv_dialog_unload(void *context) {
+  s_is_dialog_pushed = false;
+}
+
 static void prv_push_window(void *data) {
   SimpleDialog *s_dialog = simple_dialog_create("Ping");
   Dialog *dialog = simple_dialog_get_dialog(s_dialog);
+
+  dialog_set_callbacks(dialog, &(DialogCallbacks){.unload = prv_dialog_unload}, NULL);
 
   dialog_set_background_color(dialog, GColorCobaltBlue);
   dialog_set_text_color(dialog, GColorWhite);
@@ -99,14 +106,17 @@ void ping_protocol_msg_callback(CommSession *session, const uint8_t *data, size_
     case 0: {
       if (length != sizeof(PingMsgV1) &&
           length != sizeof(PingMsgV2) /* idle boolean is optional */) {
-        PBL_LOG_ERR("Invalid Ping, l=%u", length);
+        PBL_LOG_ERR("Invalid Ping, l=%zu", length);
         return;
       }
 
       // Ping message
       uint32_t cookie = pbl_be32_to_cpu(ping->hdr.cookie);
       PBL_LOG_DBG("Ping c=%" PRIu32 "", cookie);
-      launcher_task_add_callback(prv_push_window, NULL);
+      if (!s_is_dialog_pushed) {
+        s_is_dialog_pushed = true;
+        launcher_task_add_callback(prv_push_window, NULL);
+      }
 
       // Send the pong response
       PongMsg pong = {.hdr = {.cmd = 1, .cookie = pbl_cpu_to_be32(cookie)}};
@@ -117,7 +127,7 @@ void ping_protocol_msg_callback(CommSession *session, const uint8_t *data, size_
 
     case 1:
       if (length != sizeof(PongMsg)) {
-        PBL_LOG_ERR("Invalid Pong, l=%u", length);
+        PBL_LOG_ERR("Invalid Pong, l=%zu", length);
         return;
       }
 

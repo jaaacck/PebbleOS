@@ -3,11 +3,12 @@
 
 #include "inverter_layer.h"
 
-#include "applib/graphics/graphics.h"
-#include "applib/applib_malloc.auto.h"
-#include "system/passert.h"
-#include "pbl/util/math.h"
+#include <applib/graphics/graphics.h>
+#include <applib/applib_malloc.auto.h>
+#include <system/passert.h>
+#include <pbl/util/math.h>
 
+#if CONFIG_SCREEN_COLOR_DEPTH_BITS != 1
 inline static void prv_inverter_layer_update_proc_color(GContext *ctx) {
   // ctx->draw_state.drawing_box is the correct rect when this function gets
   // called through layer_render_tree(),
@@ -27,7 +28,7 @@ inline static void prv_inverter_layer_update_proc_color(GContext *ctx) {
 
   graphics_context_mark_dirty_rect(ctx, ctx->draw_state.drawing_box);
 }
-
+#else
 inline static void prv_inverter_layer_update_proc_bw(GContext *ctx) {
   // For 1Bit, just revert to the 2.x code.
   GBitmap sub_bitmap;
@@ -47,6 +48,7 @@ inline static void prv_inverter_layer_update_proc_bw(GContext *ctx) {
   graphics_context_set_compositing_mode(ctx, GCompOpAssignInverted);
   graphics_draw_bitmap_in_rect(ctx, &sub_bitmap, &rect);
 }
+#endif
 
 void inverter_layer_update_proc(InverterLayer *inverter, GContext *ctx) {
 #if CONFIG_SCREEN_COLOR_DEPTH_BITS == 1

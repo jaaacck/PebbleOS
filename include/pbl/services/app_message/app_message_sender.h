@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include "pbl/services/app_outbox_service.h"
-#include "pbl/services/comm_session/protocol.h"
-#include "pbl/services/comm_session/session.h"
-#include "pbl/services/comm_session/session_send_queue.h"
+#include <pbl/services/app_outbox_service.h>
+#include <pbl/services/comm_session/protocol.h>
+#include <pbl/services/comm_session/session.h>
+#include <pbl/services/comm_session/session_send_queue.h>
 
 #include <stdint.h>
 
@@ -80,7 +80,7 @@ typedef struct {
   uint8_t payload[];
 } AppMessageAppOutboxData;
 
-#if !UNITTEST
+#if !UNITTEST && __SIZEOF_POINTER__ == 4
 _Static_assert(sizeof(AppMessageAppOutboxData) <= 12,
                "Can't grow AppMessageAppOutboxData beyond 12 bytes, can break apps!");
 #endif

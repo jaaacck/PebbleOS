@@ -1,11 +1,11 @@
 /* SPDX-FileCopyrightText: 2024 Google LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "pbl/services/comm_session/session.h"
-#include "pbl/services/system_task.h"
-#include "pbl/services/data_logging/data_logging_service.h"
+#include <pbl/services/comm_session/session.h>
+#include <pbl/services/system_task.h>
+#include <pbl/services/data_logging/data_logging_service.h>
 #include <pbl/logging/logging.h>
-#include "pbl/kernel/compiler.h"
+#include <pbl/kernel/compiler.h>
 
 PBL_LOG_MODULE_DEFINE(service_health_sync_endpoint, CONFIG_SERVICE_HEALTH_SYNC_ENDPOINT_LOG_LEVEL);
 
@@ -39,7 +39,7 @@ static void prv_send_ack_nack(bool ok) {
                          COMM_SESSION_DEFAULT_TIMEOUT);
 }
 
-#include "pbl/services/activity/activity_algorithm.h"
+#include <pbl/services/activity/activity_algorithm.h>
 
 static void prv_sync_health_system_task_cb(void *unused) {
   if (activity_tracking_on()) {
@@ -55,7 +55,7 @@ static void prv_sync_health_system_task_cb(void *unused) {
 
 static void prv_handle_sync(const uint8_t *msg, size_t len) {
   if (len < sizeof(HealthSyncEndpointSyncMsg)) {
-    PBL_LOG_ERR("Invalid SYNC msg received, length: %u", len);
+    PBL_LOG_ERR("Invalid SYNC msg received, length: %zu", len);
     return;
   }
 
@@ -66,7 +66,7 @@ static void prv_handle_sync(const uint8_t *msg, size_t len) {
 
 void health_sync_protocol_msg_callback(CommSession *session, const uint8_t *msg, size_t len) {
   if (len < 1) {
-    PBL_LOG_ERR("Invalid message received, length: %u", len);
+    PBL_LOG_ERR("Invalid message received, length: %zu", len);
   }
 
   HealthSyncEndpointCmd cmd = *msg;

@@ -1,9 +1,9 @@
 /* SPDX-FileCopyrightText: 2024 Google LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "clar.h"
+#include <clar.h>
 
-#include "pbl/services/voice/transcription.h"
+#include <pbl/services/voice/transcription.h>
 
 #include "test_transcription_example.h"
 
@@ -21,7 +21,7 @@ static bool prv_cb_return_true(void *w, void *data) {
 }
 
 static bool prv_cb_return_false(void *w, void *data) {
-  return (s_count++ != (int)data);
+  return (s_count++ != (int)(intptr_t)data);
 }
 
 void test_transcription__validate(void) {

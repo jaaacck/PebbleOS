@@ -5,47 +5,48 @@
 #include "process_loader.h"
 
 // Pebble stuff
-#include "applib/app_launch_reason.h"
-#include "applib/app_message/app_message_internal.h"
-#include "applib/fonts/fonts.h"
-#include "applib/ui/dialogs/dialog.h"
-#include "applib/ui/dialogs/simple_dialog.h"
-#include "kernel/event_loop.h"
-#include "kernel/pbl_malloc.h"
-#include "kernel/ui/kernel_ui.h"
-#include "kernel/ui/modals/modal_manager.h"
-#include "kernel/util/segment.h"
-#include "kernel/util/task_init.h"
-#include "pbl/kernel/mutex.h"
-#include "pbl/mcu/privilege.h"
-#include "popups/health_tracking_ui.h"
-#include "popups/timeline/peek.h"
-#include "process_management/app_install_manager.h"
-#include "process_management/app_run_state.h"
-#include "process_management/pebble_process_md.h"
-#include "process_management/process_heap.h"
-#include "process_state/app_state/app_state.h"
-#include "resource/resource.h"
-#include "resource/resource_ids.auto.h"
-#include "pbl/services/analytics/analytics.h"
-#include "pbl/services/compositor/compositor_transitions.h"
-#include "pbl/services/i18n/i18n.h"
-#include "pbl/services/light.h"
-#include "pbl/services/app_inbox_service.h"
-#include "pbl/services/app_outbox_service.h"
-#include "pbl/services/vibe_pattern.h"
+#include <applib/app_launch_reason.h>
+#include <applib/app_message/app_message_internal.h>
+#include <applib/fonts/fonts.h>
+#include <applib/ui/dialogs/dialog.h>
+#include <applib/ui/dialogs/simple_dialog.h>
+#include <kernel/event_loop.h>
+#include <kernel/memory_layout.h>
+#include <kernel/pbl_malloc.h>
+#include <kernel/ui/kernel_ui.h>
+#include <kernel/ui/modals/modal_manager.h>
+#include <kernel/util/segment.h>
+#include <kernel/util/task_init.h>
+#include <pbl/kernel/mutex.h>
+#include <pbl/mcu/privilege.h>
+#include <popups/health_tracking_ui.h>
+#include <popups/timeline/peek.h>
+#include <process_management/app_install_manager.h>
+#include <process_management/app_run_state.h>
+#include <process_management/pebble_process_md.h>
+#include <process_management/process_heap.h>
+#include <process_state/app_state/app_state.h>
+#include <resource/resource.h>
+#include <resource/resource_ids.auto.h>
+#include <pbl/services/analytics/analytics.h>
+#include <pbl/services/compositor/compositor_transitions.h>
+#include <pbl/services/i18n/i18n.h>
+#include <pbl/services/light.h>
+#include <pbl/services/app_inbox_service.h>
+#include <pbl/services/app_outbox_service.h>
+#include <pbl/services/vibe_pattern.h>
 #ifndef CONFIG_RECOVERY_FW
-#include "pbl/services/speaker/speaker_service.h"
+#include <pbl/services/speaker/speaker_service.h>
 #endif
-#include "shell/normal/app_idle_timeout.h"
-#include "shell/normal/watchface.h"
-#include "shell/system_shell.h"
-#include "shell/system_app_state_machine.h"
-#include "syscall/syscall.h"
-#include "syscall/syscall_internal.h"
+#include <shell/normal/app_idle_timeout.h>
+#include <shell/normal/watchface.h>
+#include <shell/system_shell.h>
+#include <shell/system_app_state_machine.h>
+#include <syscall/syscall.h>
+#include <syscall/syscall_internal.h>
 #include <pbl/logging/logging.h>
-#include "system/passert.h"
-#include "pbl/util/math.h"
+#include <system/passert.h>
+#include <pbl/util/math.h>
 
 // FreeRTOS stuff
 
@@ -53,7 +54,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include "pbl/util/testing.h"
+#include <pbl/util/testing.h>
 
 #if defined(CONFIG_SHELL) && !defined(CONFIG_RECOVERY_FW)
 #include <pbl/shell/shell.h>
@@ -235,7 +236,7 @@ PBL_T_STATIC MemorySegment prv_get_app_ram_segment(void) {
 }
 
 PBL_T_STATIC size_t prv_get_stack_guard_size(void) {
-  return (uintptr_t)__stack_guard_size__;
+  return MEMORY_LAYOUT_STACK_GUARD_SIZE;
 }
 
 #if !defined(CONFIG_RECOVERY_FW) && !defined(CONFIG_SHELL_SDK)
@@ -815,7 +816,9 @@ ProcessContext *app_manager_get_task_context(void) {
 }
 
 bool app_manager_is_watchface_running(void) {
-  return (app_manager_get_current_app_md()->process_type == ProcessTypeWatchface);
+  // No app while one is being switched out.
+  const PebbleProcessMd *md = app_manager_get_current_app_md();
+  return (md != NULL) && (md->process_type == ProcessTypeWatchface);
 }
 
 ResAppNum app_manager_get_current_resource_num(void) {

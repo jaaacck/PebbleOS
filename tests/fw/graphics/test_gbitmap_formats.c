@@ -1,31 +1,32 @@
 /* SPDX-FileCopyrightText: 2024 Google LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "applib/graphics/gtypes.h"
+#include <applib/graphics/gtypes.h>
 
-#include "clar.h"
+#include <clar.h>
 
 #include <stdio.h>
 
 // stubs
-#include "stubs_applib_resource.h"
-#include "stubs_app_state.h"
-#include "stubs_graphics_context.h"
-#include "stubs_heap.h"
-#include "stubs_logging.h"
-#include "stubs_passert.h"
-#include "stubs_process_manager.h"
+#include <stubs_applib_resource.h>
+#include <stubs_app_state.h>
+#include <stubs_graphics_context.h>
+#include <stubs_heap.h>
+#include <stubs_logging.h>
+#include <stubs_passert.h>
+#include <stubs_process_manager.h>
 
 /////////////////////////////
 
 void test_gbitmap_formats__create_blank(void) {
-  const GSize s10 = GSize(10, 10);
-  const GSize s_full = GSize(DISP_COLS, DISP_ROWS);
   GBitmap *bmp = NULL;
 
   cl_assert((void *)&bmp->palette == (void *)&bmp->data_row_infos); // union with .palette
 
 #ifdef CONFIG_PLATFORM_GABBRO
+  const GSize s10 = GSize(10, 10);
+  const GSize s_full = GSize(DISP_COLS, DISP_ROWS);
+
   bmp = gbitmap_create_blank(s10, GBitmapFormat1Bit);
   cl_assert(NULL != bmp);
   cl_assert(NULL == bmp->data_row_infos);
@@ -56,12 +57,12 @@ void test_gbitmap_formats__create_blank(void) {
 }
 
 void test_gbitmap_formats__create_blank_with_palette(void) {
+#ifdef CONFIG_PLATFORM_GABBRO
   const GSize s10 = GSize(10, 10);
   const GSize s_full = GSize(DISP_COLS, DISP_ROWS);
   GBitmap *bmp;
   GColor8 *p = (GColor8 *)&p; // some value to test against
 
-#ifdef CONFIG_PLATFORM_GABBRO
   cl_assert(NULL == gbitmap_create_blank_with_palette(s10, GBitmapFormat1Bit, p, true));
   cl_assert(NULL == gbitmap_create_blank_with_palette(s10, GBitmapFormat8Bit, p, true));
 

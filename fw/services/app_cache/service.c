@@ -1,27 +1,27 @@
 /* SPDX-FileCopyrightText: 2024 Google LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "pbl/services/app_cache.h"
+#include <pbl/services/app_cache.h>
 
-#include "kernel/events.h"
-#include "kernel/pbl_malloc.h"
-#include "kernel/pebble_tasks.h"
-#include "pbl/services/process_management/app_storage.h"
-#include "pbl/services/system_task.h"
-#include "pbl/services/filesystem/app_file.h"
-#include "pbl/services/filesystem/pfs.h"
-#include "pbl/services/settings/settings_file.h"
-#include "pbl/services/settings/settings_file.h"
-#include "shell/normal/quick_launch.h"
-#include "shell/normal/watchface.h"
-#include "shell/prefs.h"
+#include <kernel/events.h>
+#include <kernel/pbl_malloc.h>
+#include <kernel/pebble_tasks.h>
+#include <pbl/services/process_management/app_storage.h>
+#include <pbl/services/system_task.h>
+#include <pbl/services/filesystem/app_file.h>
+#include <pbl/services/filesystem/pfs.h>
+#include <pbl/services/settings/settings_file.h>
+#include <pbl/services/settings/settings_file.h>
+#include <shell/normal/quick_launch.h>
+#include <shell/normal/watchface.h>
+#include <shell/prefs.h>
 #include <pbl/logging/logging.h>
-#include "system/passert.h"
-#include "pbl/kernel/compiler.h"
-#include "pbl/util/list.h"
-#include "pbl/util/math.h"
+#include <system/passert.h>
+#include <pbl/kernel/compiler.h>
+#include <pbl/util/list.h>
+#include <pbl/util/math.h>
 #include <time.h>
-#include "pbl/util/units.h"
+#include <pbl/util/units.h>
 
 PBL_LOG_MODULE_DEFINE(service_app_cache, CONFIG_SERVICE_APP_CACHE_LOG_LEVEL);
 
@@ -66,8 +66,8 @@ static PBL_MUTEX_DEFINE(s_app_cache_mutex);
 
 //! Actual data structure stored in flash about an app cache entry
 typedef struct PBL_PACKED {
-  time_t install_date;
-  time_t last_launch;
+  int32_t install_date;
+  int32_t last_launch;
   uint32_t total_size;
   uint16_t launch_count;
 } AppCacheEntry;

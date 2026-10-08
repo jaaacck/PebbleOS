@@ -4,26 +4,26 @@
 #include "health_service.h"
 #include "health_service_private.h"
 
-#include "applib/app.h"
-#include "applib/applib_malloc.auto.h"
-#include "applib/pbl_std/pbl_std.h"
+#include <applib/app.h>
+#include <applib/applib_malloc.auto.h>
+#include <applib/pbl_std/pbl_std.h>
 #include "event_service_client.h"
-#include "kernel/events.h"
-#include "process_state/app_state/app_state.h"
-#include "process_state/worker_state/worker_state.h"
-#include "pbl/services/hrm/hrm_manager.h"
-#include "pbl/services/activity/activity.h"
-#include "shell/prefs_syscalls.h"
-#include "syscall/syscall.h"
+#include <kernel/events.h>
+#include <process_state/app_state/app_state.h>
+#include <process_state/worker_state/worker_state.h>
+#include <pbl/services/hrm/hrm_manager.h>
+#include <pbl/services/activity/activity.h>
+#include <shell/prefs_syscalls.h>
+#include <syscall/syscall.h>
 #include <pbl/logging/logging.h>
-#include "system/passert.h"
-#include "pbl/util/math.h"
-#include "pbl/util/size.h"
-#include "pbl/util/stats.h"
-#include "pbl/util/testing.h"
-#include "pbl/services/time.h"
-#include "pbl/util/time.h"
-#include "pbl/util/units.h"
+#include <system/passert.h>
+#include <pbl/util/math.h>
+#include <pbl/util/size.h>
+#include <pbl/util/stats.h>
+#include <pbl/util/testing.h>
+#include <pbl/services/time.h>
+#include <pbl/util/time.h>
+#include <pbl/util/units.h>
 
 // Fetching minute history can take a while, so we limit the amount of data we will ever access
 // in one call to this
@@ -1181,7 +1181,7 @@ bool health_service_cancel_metric_alert(HealthMetricAlert *alert) {
     return NULL;
   }
 
-  HealthMetric metric = (HealthMetric)alert;
+  HealthMetric metric = (HealthMetric)(uintptr_t)alert;
   if (prv_is_heart_rate_metric(metric) && !sys_activity_prefs_heart_rate_is_enabled()) {
     return false;
   }
@@ -1439,8 +1439,9 @@ void health_service_activities_iterate(HealthActivityMask activity_mask, time_t 
 // ----------------------------------------------------------------------------------------------
 bool health_service_private_get_yesterdays_sleep_activity(HealthValue *enter_sec,
                                                           HealthValue *exit_sec) {
-  return sys_activity_get_metric(ActivityMetricSleepEnterAtSeconds, 1, enter_sec) &
-         sys_activity_get_metric(ActivityMetricSleepExitAtSeconds, 1, exit_sec);
+  const bool enter_ok = sys_activity_get_metric(ActivityMetricSleepEnterAtSeconds, 1, enter_sec);
+  const bool exit_ok = sys_activity_get_metric(ActivityMetricSleepExitAtSeconds, 1, exit_sec);
+  return enter_ok && exit_ok;
 }
 
 // ----------------------------------------------------------------------------------------------

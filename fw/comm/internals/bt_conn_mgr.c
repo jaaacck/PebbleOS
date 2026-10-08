@@ -3,19 +3,19 @@
 
 #include <pbl/bluetooth/responsiveness.h>
 
-#include "comm/ble/gap_le_connect_params.h"
-#include "comm/ble/gap_le_connection.h"
-#include "comm/bt_conn_mgr.h"
-#include "comm/bt_lock.h"
+#include <comm/ble/gap_le_connect_params.h>
+#include <comm/ble/gap_le_connection.h>
+#include <comm/bt_conn_mgr.h>
+#include <comm/bt_lock.h>
 #include <pbl/drivers/rtc.h>
-#include "kernel/event_loop.h"
-#include "kernel/pbl_malloc.h"
-#include "pbl/services/regular_timer.h"
-#include "pbl/services/system_task.h"
+#include <kernel/event_loop.h>
+#include <kernel/pbl_malloc.h>
+#include <pbl/services/regular_timer.h>
+#include <pbl/services/system_task.h>
 #include <pbl/logging/logging.h>
-#include "system/passert.h"
-#include "pbl/util/list.h"
-#include "pbl/util/math.h"
+#include <system/passert.h>
+#include <pbl/util/list.h>
+#include <pbl/util/math.h>
 
 //! The Bluetooth Connection Manager is responsible for managing the power
 //! state of the active bluetooth connections. Sub-modules using bluetooth are
@@ -253,7 +253,8 @@ static void prv_bt_le_gateway_response_latency_watchdog_cb(void *data) {
 }
 
 static bool prv_find_source(ListNode *found_node, void *data) {
-  return (((ConnectionStateRequest *)found_node)->consumer == (enum pbl_bt_consumer)data);
+  return (((ConnectionStateRequest *)found_node)->consumer ==
+          (enum pbl_bt_consumer)(uintptr_t)data);
 }
 
 /*

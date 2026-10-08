@@ -6,15 +6,15 @@
 #include "sleep_detail_card.h"
 #include "progress.h"
 #include "ui.h"
-#include "pbl/services/activity/health_util.h"
+#include <pbl/services/activity/health_util.h>
 
-#include "applib/pbl_std/pbl_std.h"
-#include "applib/ui/kino/kino_layer.h"
-#include "board/display.h"
-#include "resource/resource_ids.auto.h"
-#include "pbl/services/i18n/i18n.h"
-#include "pbl/util/size.h"
-#include "pbl/util/units.h"
+#include <applib/pbl_std/pbl_std.h>
+#include <applib/ui/kino/kino_layer.h>
+#include <board/display.h>
+#include <resource/resource_ids.auto.h>
+#include <pbl/services/i18n/i18n.h>
+#include <pbl/util/size.h>
+#include <pbl/util/units.h>
 
 // Compile-time display offset calculations
 #define HEALTH_X_OFFSET ((DISP_COLS - LEGACY_2X_DISP_COLS) / 2)
@@ -62,7 +62,8 @@ static void prv_render_sleep_sessions(GContext *ctx, HealthSleepSummaryCardData 
     }
 
     struct tm local_tm;
-    localtime_r(&session->start_utc, &local_tm);
+    const time_t start_utc = session->start_utc;
+    localtime_r(&start_utc, &local_tm);
 
     const int session_start_24h =
         (local_tm.tm_sec + local_tm.tm_min * PBL_SEC_PER_MIN + local_tm.tm_hour * PBL_SEC_PER_HOUR);

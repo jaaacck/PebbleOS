@@ -4,16 +4,16 @@
 #include "fonts.h"
 #include "fonts_private.h"
 
-#include "applib/applib_malloc.auto.h"
-#include "applib/applib_resource.h"
-#include "applib/graphics/text_resources.h"
-#include "process_management/app_manager.h"
-#include "resource/resource.h"
-#include "resource/resource_ids.auto.h"
-#include "syscall/syscall.h"
-#include "system/passert.h"
+#include <applib/applib_malloc.auto.h>
+#include <applib/applib_resource.h>
+#include <applib/graphics/text_resources.h>
+#include <process_management/app_manager.h>
+#include <resource/resource.h>
+#include <resource/resource_ids.auto.h>
+#include <syscall/syscall.h>
+#include <system/passert.h>
 #include <pbl/logging/logging.h>
-#include "pbl/util/size.h"
+#include <pbl/util/size.h>
 
 #include <string.h>
 
@@ -33,10 +33,7 @@ GFont fonts_get_system_font(const char *font_key) {
   // maybe they wanted a renamed font
   if (NULL == res && 0 == strncmp(font_key, bitham_alias, bitham_alias_len)) {
     char new_font_key[bitham_prefix_len - bitham_alias_len + strlen(font_key) + 1];
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wstringop-truncation"
-    strncpy(new_font_key, bitham_prefix, bitham_prefix_len);
-#pragma GCC diagnostic pop
+    memcpy(new_font_key, bitham_prefix, bitham_prefix_len);
     strcpy(new_font_key + bitham_prefix_len, font_key + bitham_alias_len);
     // let's try again
     res = sys_font_get_system_font(new_font_key);
@@ -52,7 +49,8 @@ GFont fonts_get_system_font(const char *font_key) {
 }
 
 GFont fonts_load_custom_font(ResHandle handle) {
-  GFont res = fonts_load_custom_font_system(sys_get_current_resource_num(), (uint32_t)handle);
+  GFont res =
+      fonts_load_custom_font_system(sys_get_current_resource_num(), (uint32_t)(uintptr_t)handle);
   if (res == NULL) {
     PBL_LOG_WRN("Getting fallback font instead");
     res = sys_font_get_system_font("RESOURCE_ID_GOTHIC_14");

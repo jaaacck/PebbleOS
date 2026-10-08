@@ -8,7 +8,7 @@
 #include <host/ble_store.h>
 #include <kernel/event_loop.h>
 #include <kernel/pbl_malloc.h>
-#include "pbl/kernel/mutex.h"
+#include <pbl/kernel/mutex.h>
 #include <pbl/services/bluetooth/bluetooth_persistent_storage.h>
 #include <string.h>
 #include <pbl/logging/logging.h>
@@ -335,6 +335,7 @@ static int prv_nimble_store_read_cccd(const struct ble_store_key_cccd *key_cccd,
   }
 
   *value_cccd = s->value_cccd;
+  ret = 0;
 
 unlock:
   pbl_mutex_unlock(&s_store_mutex);

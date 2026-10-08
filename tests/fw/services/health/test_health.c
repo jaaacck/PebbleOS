@@ -1,27 +1,27 @@
 /* SPDX-FileCopyrightText: 2024 Google LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "clar.h"
+#include <clar.h>
 
-#include "applib/health_service_private.h"
-#include "pbl/services/activity/activity.h"
-#include "shell/prefs_syscalls.h"
-#include "pbl/util/size.h"
+#include <applib/health_service_private.h>
+#include <pbl/services/activity/activity.h>
+#include <shell/prefs_syscalls.h>
+#include <pbl/util/size.h>
 
 // Stubs
-#include "stubs_app_manager.h"
-#include "stubs_logging.h"
-#include "stubs_passert.h"
-#include "stubs_pbl_malloc.h"
-#include "stubs_worker_manager.h"
+#include <stubs_app_manager.h>
+#include <stubs_logging.h>
+#include <stubs_passert.h>
+#include <stubs_pbl_malloc.h>
+#include <stubs_worker_manager.h>
 
 // Fakes
-#include "fake_rtc.h"
-#include "fake_pbl_std.h"
-#include "pbl/util/testing.h"
-#include "pbl/services/time.h"
-#include "pbl/util/time.h"
-#include "pbl/util/units.h"
+#include <fake_rtc.h>
+#include <fake_pbl_std.h>
+#include <pbl/util/testing.h>
+#include <pbl/services/time.h>
+#include <pbl/util/time.h>
+#include <pbl/util/units.h>
 
 bool sys_activity_is_initialized(void) {
   return true;
@@ -915,13 +915,10 @@ void test_health__activities_iterate(void) {
   // oldest to most-recent (looking at each session's start): 3, 2, 1, 0
   // most-recent to oldest (looking at each session's end): 1, 0, 3, 2
 
-  const int num_sleep_sessions = 4;
   const int num_restfulsleep_sessions = 2;
   const int num_run_sessions = 1;
   const int num_walk_sessions = 1;
   const int num_open_sessions = 1;
-  const int num_sessions = num_sleep_sessions + num_restfulsleep_sessions + num_run_sessions +
-                           num_walk_sessions + num_open_sessions;
 
   // result from mocked sys_activity_get_sessions_values is still false
   health_service_activities_iterate(HealthActivityMaskAll, now - (100 * PBL_SEC_PER_MIN), now,

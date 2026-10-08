@@ -1,18 +1,18 @@
 /* SPDX-FileCopyrightText: 2024 Google LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "pbl/util/list.h"
-#include "pbl/services/event_service.h"
-#include "kernel/kernel_applib_state.h"
+#include <pbl/util/list.h>
+#include <pbl/services/event_service.h>
+#include <kernel/kernel_applib_state.h>
 
 #include "event_service_client.h"
-#include "pbl/util/list.h"
-#include "process_state/app_state/app_state.h"
-#include "process_state/worker_state/worker_state.h"
+#include <pbl/util/list.h>
+#include <process_state/app_state/app_state.h>
+#include <process_state/worker_state/worker_state.h>
 
-#include "syscall/syscall.h"
+#include <syscall/syscall.h>
 #include <pbl/logging/logging.h>
-#include "system/passert.h"
+#include <system/passert.h>
 
 static EventServiceInfo *prv_get_state(void) {
   PebbleTask task = pebble_task_get_current();
@@ -33,8 +33,7 @@ static int event_service_comparator(EventServiceInfo *a, EventServiceInfo *b) {
 
 bool event_service_filter(ListNode *node, void *tp) {
   EventServiceInfo *info = (EventServiceInfo *)node;
-  uint32_t type = (uint32_t)tp;
-  return (info->type == type);
+  return (info->type == (uintptr_t)tp);
 }
 
 static void do_handle(EventServiceInfo *info, PebbleEvent *e) {

@@ -6,13 +6,13 @@
 #include "resource_storage_builtin.h"
 #include "resource_storage_flash.h"
 
-#include "process_management/app_manager.h"
+#include <process_management/app_manager.h>
 #include <pbl/drivers/flash.h>
-#include "kernel/pbl_malloc.h"
-#include "pbl/kernel/mutex.h"
-#include "pbl/services/process_management/app_storage.h"
+#include <kernel/pbl_malloc.h>
+#include <pbl/kernel/mutex.h>
+#include <pbl/services/process_management/app_storage.h>
 #include <pbl/logging/logging.h>
-#include "system/passert.h"
+#include <system/passert.h>
 
 // TODO: this may be replaced once apps become more dynamic
 
@@ -38,7 +38,7 @@ static AppResourceCache s_app_resource_cache;
 
 static bool prv_resource_filter(ListNode *found_node, void *data) {
   CachedResource *resource = (CachedResource *)found_node;
-  uint32_t resource_id = (uint32_t)data;
+  uintptr_t resource_id = (uintptr_t)data;
 
   return (resource->id == resource_id);
 }

@@ -3,13 +3,13 @@
 
 #pragma once
 
-#include "comm/ble/gatt_client_subscriptions.h"
+#include <comm/ble/gatt_client_subscriptions.h>
 
 #include <stdint.h>
 
-#include "pbl/util/uuid.h"
-#include "mfg/mfg_serials.h"
-#include "pbl/kernel/compiler.h"
+#include <pbl/util/uuid.h>
+#include <mfg/mfg_serials.h>
+#include <pbl/kernel/compiler.h>
 
 #define PPOGATT_V1_DESIRED_RX_WINDOW_SIZE  (4500 / MAX_ATT_WRITE_PAYLOAD_SIZE)
 #define PPOGATT_MIN_VERSION                (0x00)
@@ -64,6 +64,14 @@ typedef struct PBL_PACKED {
   uint8_t sn : PPOGATT_SN_BITS;
   uint8_t payload[];
 } PPoGATTPacket;
+
+//! PPoGATTPacket without payload
+typedef struct PBL_PACKED {
+  PPoGATTPacketType type : 3;
+  uint8_t sn : PPOGATT_SN_BITS;
+} PPoGATTPacketHeader;
+
+_Static_assert(sizeof(PPoGATTPacketHeader) == sizeof(PPoGATTPacket), "");
 
 _Static_assert(sizeof(PPoGATTPacket) == 1,
                "You can't increase the size of PPoGATTPacket. It's set in stone now!");

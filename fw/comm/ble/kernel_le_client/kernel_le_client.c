@@ -4,32 +4,32 @@
 #include "kernel_le_client.h"
 
 #if defined(CONFIG_BT_ANCS_CLIENT)
-#include "ancs/ancs_definition.h"
+#include <comm/ble/kernel_le_client/ancs/ancs_definition.h>
 #endif
 #if defined(CONFIG_BT_AMS_CLIENT)
-#include "ams/ams_definition.h"
+#include <comm/ble/kernel_le_client/ams/ams_definition.h>
 #endif
-#include "app_launch/app_launch_definition.h"
-#include "dis/dis_definition.h"
-#include "ppogatt/ppogatt_definition.h"
+#include <comm/ble/kernel_le_client/app_launch/app_launch_definition.h>
+#include <comm/ble/kernel_le_client/dis/dis_definition.h>
+#include <comm/ble/kernel_le_client/ppogatt/ppogatt_definition.h>
 #if UNITTEST
-#include "test/test_definition.h"
+#include <comm/ble/kernel_le_client/test/test_definition.h>
 #endif
 
-#include "kernel/event_loop.h"
-#include "kernel/events.h"
-#include "kernel/pbl_malloc.h"
+#include <kernel/event_loop.h>
+#include <kernel/events.h>
+#include <kernel/pbl_malloc.h>
 
 #include <pbl/logging/logging.h>
-#include "system/passert.h"
-#include "pbl/kernel/compiler.h"
+#include <system/passert.h>
+#include <pbl/kernel/compiler.h>
 
-#include "comm/ble/gap_le_connect.h"
-#include "comm/ble/gap_le_slave_reconnect.h"
-#include "comm/ble/gatt_client_accessors.h"
-#include "comm/ble/gatt_client_discovery.h"
-#include "comm/ble/gatt_client_operations.h"
-#include "comm/ble/gatt_client_subscriptions.h"
+#include <comm/ble/gap_le_connect.h>
+#include <comm/ble/gap_le_slave_reconnect.h>
+#include <comm/ble/gatt_client_accessors.h>
+#include <comm/ble/gatt_client_discovery.h>
+#include <comm/ble/gatt_client_operations.h>
+#include <comm/ble/gatt_client_subscriptions.h>
 
 #define MAX_SERVICE_INSTANCES (8)
 
@@ -336,8 +336,12 @@ static void prv_consume_notifications(const PebbleBLEGATTClientEvent *event) {
       return;
     }
 
+    pbl_bt_characteristic_t characteristic;
+    uint16_t value_length = header.value_length;
     const uint16_t next_value_length = gatt_client_subscriptions_consume_notification(
-        &header.characteristic, buffer, &header.value_length, GAPLEClientKernel, &has_more);
+        &characteristic, buffer, &value_length, GAPLEClientKernel, &has_more);
+    header.characteristic = characteristic;
+    header.value_length = value_length;
 
     const KernelLEClient *const client = prv_client_for_characteristic(header.characteristic);
     if (client->handle_read_or_notification) {
@@ -479,13 +483,6 @@ static void prv_connect_gateway_bonding(pbl_bt_bonding_id_t gateway_bonding) {
 }
 
 // -------------------------------------------------------------------------------------------------
-static void prv_cancel_connect_gateway_bonding(pbl_bt_bonding_id_t gateway_bonding) {
-  gap_le_slave_reconnect_stop();
-  // FIXME: Redundant? since gap_le_connect will also clean up?
-  gap_le_connect_cancel_by_bonding(gateway_bonding, GAPLEClientKernel);
-}
-
-// -------------------------------------------------------------------------------------------------
 static void prv_cleanup_clients_kernel_main_cb(void *unused) {
 #if defined(CONFIG_BT_ANCS_CLIENT)
   ancs_destroy();
@@ -497,12 +494,15 @@ static void prv_cleanup_clients_kernel_main_cb(void *unused) {
 
 // -------------------------------------------------------------------------------------------------
 void kernel_le_client_handle_bonding_change(pbl_bt_bonding_id_t bonding, BtPersistBondingOp op) {
-  if (bt_persistent_storage_is_ble_ancs_bonding(bonding)) {
-    if (op == BtPersistBondingOpWillDelete) {
-      prv_cancel_connect_gateway_bonding(bonding);
-    } else if (op == BtPersistBondingOpDidAdd) {
-      prv_connect_gateway_bonding(bonding);
+  if (op == BtPersistBondingOpWillDelete) {
+    // The bonding is already gone from storage, so its type cannot be read back.
+    if (!bt_persistent_storage_has_active_ble_gateway_bonding() &&
+        !bt_persistent_storage_has_ble_ancs_bonding()) {
+      gap_le_slave_reconnect_stop();
     }
+    gap_le_connect_cancel_by_bonding(bonding, GAPLEClientKernel);
+  } else if (op == BtPersistBondingOpDidAdd && bt_persistent_storage_is_ble_ancs_bonding(bonding)) {
+    prv_connect_gateway_bonding(bonding);
   }
 }
 

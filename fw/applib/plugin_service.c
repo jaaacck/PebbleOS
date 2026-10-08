@@ -2,15 +2,15 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 #include "event_service_client.h"
-#include "applib/applib_malloc.auto.h"
+#include <applib/applib_malloc.auto.h>
 #include "plugin_service.h"
 #include "plugin_service_private.h"
-#include "syscall/syscall.h"
+#include <syscall/syscall.h>
 
-#include "process_state/app_state/app_state.h"
-#include "process_state/worker_state/worker_state.h"
+#include <process_state/app_state/app_state.h>
+#include <process_state/worker_state/worker_state.h>
 #include <pbl/logging/logging.h>
-#include "system/passert.h"
+#include <system/passert.h>
 
 // ---------------------------------------------------------------------------------------------------------------
 // Get our state variables
@@ -60,7 +60,8 @@ static void prv_handle_event_service_event(PebbleEvent *e, void *context) {
 
   // Call the handler provided by the client
   PluginServiceEntry *entry = (PluginServiceEntry *)found;
-  entry->handler(e->plugin_service.type, &e->plugin_service.data);
+  PluginEventData data = e->plugin_service.data;
+  entry->handler(e->plugin_service.type, &data);
 }
 
 // ---------------------------------------------------------------------------------------------------------------

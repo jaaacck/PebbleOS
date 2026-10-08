@@ -3,19 +3,19 @@
 
 #include "gap_le_connect.h"
 
-#include "comm/bluetooth_analytics.h"
-#include "comm/bt_conn_mgr.h"
-#include "comm/bt_lock.h"
+#include <comm/bluetooth_analytics.h>
+#include <comm/bt_conn_mgr.h>
+#include <comm/bt_lock.h>
 #include "gap_le_advert.h"
 #include "gap_le_connect_params.h"
 #include "gap_le_connection.h"
 #include "gap_le_task.h"
-#include "kernel/events.h"
-#include "kernel/pbl_malloc.h"
-#include "pbl/services/bluetooth/bluetooth_persistent_storage.h"
-#include "pbl/services/bluetooth/ble_hrm.h"
+#include <kernel/events.h>
+#include <kernel/pbl_malloc.h>
+#include <pbl/services/bluetooth/bluetooth_persistent_storage.h>
+#include <pbl/services/bluetooth/ble_hrm.h>
 #include <pbl/logging/logging.h>
-#include "system/passert.h"
+#include <system/passert.h>
 
 #include <pbl/bluetooth/gap_le_connect.h>
 #include <pbl/bluetooth/pebble_pairing_service.h>
@@ -494,6 +494,11 @@ void pbl_bt_handle_le_disconnection_complete_event(
     case PBL_BT_HCI_STATUS_SUCCESS: {
       // Disconnection! Update our records:
       GAPLEConnection *connection = gap_le_connection_by_device(&event->peer_address);
+      if (!connection) {
+        // Stopping Bluetooth drops its links after the connections are gone.
+        PBL_LOG_DBG("LE Disconn: no connection for hdl=%u", event->handle);
+        break;
+      }
 #ifdef CONFIG_SERVICE_BLE_HRM
       ble_hrm_handle_disconnection(connection);
 #endif
@@ -695,7 +700,7 @@ static bool prv_intent_matches_connection(const GAPLEConnectionIntent *intent,
   if (intent->is_bonding_based) {
     // If the bonding-based intent is connected, the `device` is set to the connection address,
     // if it's not connected, it's all zeroes.
-    if (bt_device_equal(&connection->device.opaque, &intent->device.opaque)) {
+    if (bt_device_internal_equal(&connection->device, &intent->device)) {
       return true;
     }
     if (!connection->irk) {
@@ -710,7 +715,7 @@ static bool prv_intent_matches_connection(const GAPLEConnectionIntent *intent,
     }
     return (0 == memcmp(connection->irk, &intent->bonding->irk, sizeof(*connection->irk)));
   } else {
-    return bt_device_equal(&connection->device.opaque, &intent->device.opaque);
+    return bt_device_internal_equal(&connection->device, &intent->device);
   }
 }
 
@@ -725,7 +730,7 @@ static bool prv_intent_filter_by_device(ListNode *node, void *data) {
   if (intent->is_bonding_based) {
     return false;
   }
-  return bt_device_equal(&target_device->opaque, &intent->device.opaque);
+  return bt_device_internal_equal(target_device, &intent->device);
 }
 
 static GAPLEConnectionIntent *prv_get_intent_by_device(

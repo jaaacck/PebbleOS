@@ -44,7 +44,10 @@ def build(request):
 
 @pytest.fixture(scope="session")
 def results_dir(request):
-    return results_dir_for(request.config)
+    """Where the device keeps its files: one per pytest-xdist worker."""
+    base = results_dir_for(request.config)
+    worker = os.environ.get("PYTEST_XDIST_WORKER")
+    return os.path.join(base, worker) if worker else base
 
 
 @pytest.fixture(scope="session")
@@ -86,7 +89,7 @@ def device_object(request, build, results_dir, lab_setup, ppk2):
             erase_fs=config.getoption("erase_fs"),
             flash_command=config.getoption("flash_command"),
             qemu_rtc=config.getoption("qemu_rtc"),
-            qemu_bt_hci=lab_setup.qemu_bt_hci,
+            bt_hci=lab_setup.bt_hci,
             ble_controller=lab_setup.phone.controller if lab_setup.phone else None,
             power_supply=ppk2,
         )
@@ -206,12 +209,14 @@ def power(ppk2, dut, test_results_dir):
 def phones(dut, lab_setup, test_results_dir):
     """Make phones: ``phones()`` is the setup's phone. A Bumble phone can
     also be another phone to the watch (``address``, ``name``) and host the
-    PPoGATT service itself (``ppogatt="forward"``)."""
-    from harness.helpers.phone import make_phone
+    PPoGATT service itself (``ppogatt="forward"``). They start each test with
+    no bonds, which they keep for the rest of it."""
+    from harness.helpers.phone import forget_bonds, make_phone
 
     reason = lab_setup.lacks("phone")
     if reason:
         pytest.skip(reason)
+    forget_bonds(test_results_dir)
     made = []
 
     def make(**options):

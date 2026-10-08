@@ -1,22 +1,22 @@
 /* SPDX-FileCopyrightText: 2024 Google LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "applib/graphics/gcontext.h"
-#include "applib/graphics/gtypes.h"
-#include "applib/graphics/text_render.h"
-#include "applib/graphics/text_resources.h"
+#include <applib/graphics/gcontext.h>
+#include <applib/graphics/gtypes.h>
+#include <applib/graphics/text_render.h>
+#include <applib/graphics/text_resources.h>
 
 #include <string.h>
 
-#include "clar.h"
+#include <clar.h>
 
-#include "stubs_applib_resource.h"
-#include "stubs_app_state.h"
-#include "stubs_compiled_with_legacy2_sdk.h"
-#include "stubs_heap.h"
-#include "stubs_logging.h"
-#include "stubs_passert.h"
-#include "stubs_syscalls.h"
+#include <stubs_applib_resource.h>
+#include <stubs_app_state.h>
+#include <stubs_compiled_with_legacy2_sdk.h>
+#include <stubs_heap.h>
+#include <stubs_logging.h>
+#include <stubs_passert.h>
+#include <stubs_syscalls.h>
 
 ResAppNum app_get_resource_num(void) {
   return 0;
@@ -75,7 +75,6 @@ void test_text_render__convert_1bit_to_8bit_144x168(void) {
   const int row_1bit_size_words = 1 + (size.w - 1) / 32;
 
   GBitmap *bitmap = gbitmap_create_blank(size, GBitmapFormat8Bit);
-  uintptr_t base = (uintptr_t)bitmap->addr;
 
   int dest_x = 0;
   int dest_y = 0;
@@ -111,7 +110,6 @@ void test_text_render__convert_1bit_to_8bit_180x180(void) {
   const int row_1bit_size_words = 1 + (size.w - 1) / 32;
 
   GBitmap *bitmap = gbitmap_create_blank(size, GBitmapFormat8Bit);
-  uintptr_t base = (uintptr_t)bitmap->addr;
 
   int dest_x = 0;
   int dest_y = 0;

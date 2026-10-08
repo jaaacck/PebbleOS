@@ -1,7 +1,9 @@
 /* SPDX-FileCopyrightText: 2026 Core Devices LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "clar.h"
+#include <time.h>
+
+#include <clar.h>
 #include <pbl/kernel/compiler.h>
 
 // Exercise the production module macros with this suite's explicit Kconfig symbols.
@@ -9,10 +11,10 @@
 #include <pbl/logging/logging.h>
 #define UNITTEST 1
 
-#include "kernel/pebble_tasks.h"
-#include "logging/logging_private.h"
+#include <kernel/pebble_tasks.h>
+#include <logging/logging_private.h>
 
-#include "stubs_passert.h"
+#include <stubs_passert.h>
 
 PBL_LOG_MODULE_DEFINE(test_runtime, CONFIG_TEST_RUNTIME_LOG_LEVEL);
 

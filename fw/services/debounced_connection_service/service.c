@@ -1,18 +1,18 @@
 /* SPDX-FileCopyrightText: 2024 Google LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "pbl/services/debounced_connection_service.h"
+#include <pbl/services/debounced_connection_service.h>
 
-#include "pbl/services/comm_session/session.h"
-#include "pbl/services/regular_timer.h"
-#include "syscall/syscall_internal.h"
+#include <pbl/services/comm_session/session.h>
+#include <pbl/services/regular_timer.h>
+#include <syscall/syscall_internal.h>
 
 #ifndef CONFIG_RECOVERY_FW
-#include "pbl/services/notifications/do_not_disturb.h"
-#include "pbl/services/notifications/alerts.h"
-#include "pbl/services/notifications/alerts_preferences_private.h"
-#include "pbl/services/vibes/vibe_client.h"
-#include "pbl/services/vibes/vibe_score.h"
+#include <pbl/services/notifications/do_not_disturb.h>
+#include <pbl/services/notifications/alerts.h>
+#include <pbl/services/notifications/alerts_preferences_private.h>
+#include <pbl/services/vibes/vibe_client.h>
+#include <pbl/services/vibes/vibe_score.h>
 #endif
 
 #include <pbl/logging/logging.h>
@@ -47,7 +47,7 @@ static void prv_put_debounced_connection_event(DebounceConnection conn_id) {
 }
 
 static void prv_handle_disconnection_debounced(void *data) {
-  DebounceConnection conn_id = (DebounceConnection)data;
+  DebounceConnection conn_id = (DebounceConnection)(uintptr_t)data;
   s_debounced_state_is_connected[conn_id] = false;
   prv_put_debounced_connection_event(conn_id);
 #ifndef CONFIG_RECOVERY_FW

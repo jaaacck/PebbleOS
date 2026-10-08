@@ -5,23 +5,23 @@
 #include "ams_analytics.h"
 #include "ams_util.h"
 
-#include "comm/ble/gap_le_connection.h"
-#include "comm/ble/gatt_client_accessors.h"
-#include "comm/ble/gatt_client_operations.h"
-#include "comm/ble/gatt_client_subscriptions.h"
-#include "comm/bt_conn_mgr.h"
-#include "comm/bt_lock.h"
+#include <comm/ble/gap_le_connection.h>
+#include <comm/ble/gatt_client_accessors.h>
+#include <comm/ble/gatt_client_operations.h>
+#include <comm/ble/gatt_client_subscriptions.h>
+#include <comm/bt_conn_mgr.h>
+#include <comm/bt_lock.h>
 
-#include "kernel/event_loop.h"
-#include "kernel/pbl_malloc.h"
+#include <kernel/event_loop.h>
+#include <kernel/pbl_malloc.h>
 
-#include "pbl/services/music_internal.h"
+#include <pbl/services/music_internal.h>
 
 #include <pbl/logging/logging.h>
-#include "system/hexdump.h"
-#include "system/passert.h"
-#include "pbl/kernel/compiler.h"
-#include "pbl/util/units.h"
+#include <system/hexdump.h>
+#include <system/passert.h>
+#include <pbl/kernel/compiler.h>
+#include <pbl/util/units.h>
 
 #include <pbl/btutil/bt_device.h>
 
@@ -114,7 +114,7 @@ static void prv_request_response_time(enum pbl_bt_consumer consumer,
     const pbl_bt_characteristic_t characteristic = s_ams_client->characteristics[0];
     const struct pbl_bt_device_internal device =
         gatt_client_characteristic_get_device(characteristic);
-    if (!bt_device_is_invalid(&device.opaque)) {
+    if (!bt_device_internal_equal(&device, &PBL_BT_DEVICE_INTERNAL_INVALID)) {
       GAPLEConnection *connection = gap_le_connection_by_device(&device);
       conn_mgr_set_ble_conn_response_time(connection, consumer, state, max_period_secs);
     }

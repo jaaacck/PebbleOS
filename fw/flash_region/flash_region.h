@@ -5,7 +5,7 @@
 
 #include <stdint.h>
 
-#ifdef CONFIG_FLASH_QEMU
+#if defined(CONFIG_FLASH_QEMU) || defined(CONFIG_FLASH_POSIX)
 #include "flash_region_qemu.h"
 #elif defined(CONFIG_FLASH_GD25LQ255E)
 #include "flash_region_gd25lq255e.h"
@@ -14,6 +14,9 @@
 #endif
 
 #ifdef CONFIG_PBLBOOT
+#define FLASH_REGION_CD_BEGIN FLASH_REGION_START_ADDR(CD)
+#define FLASH_REGION_CD_END   FLASH_REGION_END_ADDR(CD)
+
 // We assume that if we have pblboot, we use the two slots with direct XIP
 #if defined(CONFIG_RECOVERY_FW) && !defined(CONFIG_MFG) && !defined(CONFIG_RECOVERY_FW_AS_FW)
 // On recovery we always write to slot 0
