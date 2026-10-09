@@ -20,6 +20,9 @@
  * @{
  */
 
+/** @brief Load the queued dismissals. Call once at boot. */
+void pending_dismissals_init(void);
+
 /**
  * @brief Queue the dismissal of a notification dismissed while the phone can't be reached.
  *
@@ -34,6 +37,8 @@ void pending_dismissals_send_to_app(void);
 
 /**
  * @brief Check whether any dismissal is queued for iOS.
+ *
+ * Doesn't access the file, so it can be called from KernelMain.
  *
  * @return true if there is one.
  */

@@ -116,6 +116,14 @@ static Uuid prv_add_app(uint8_t action_id) {
 
 #define NOW (1790000000)
 
+extern uint32_t s_ancs_queued_at;
+
+//! What a reboot keeps: the file
+static void prv_reboot(void) {
+  s_ancs_queued_at = 0;
+  pending_dismissals_init();
+}
+
 void test_pending_dismissals__initialize(void) {
   fake_spi_flash_init(0, 0x1000000);
   pfs_init(false);
@@ -124,6 +132,7 @@ void test_pending_dismissals__initialize(void) {
   s_app_connected = false;
   s_num_sent = 0;
   s_num_ancs_sent = 0;
+  prv_reboot();
 }
 
 void test_pending_dismissals__cleanup(void) {
@@ -253,4 +262,27 @@ void test_pending_dismissals__expire(void) {
   s_app_connected = true;
   pending_dismissals_send_to_app();
   cl_assert_equal_i(s_num_sent, 0);
+}
+
+void test_pending_dismissals__kept_across_reboots(void) {
+  prv_add_ancs(1, "com.a", NOW);
+  prv_add_app(3);
+
+  prv_reboot();
+  cl_assert(pending_dismissals_has_ancs());
+  ANCSReconcileEntry canary;
+  const uint32_t uids[] = {1};
+  cl_assert(pending_dismissals_find_ancs_canary(uids, ARRAY_LENGTH(uids), &canary));
+  cl_assert_equal_i(canary.uid, 1);
+
+  s_app_connected = true;
+  pending_dismissals_send_to_app();
+  cl_assert_equal_i(s_num_sent, 1);
+}
+
+void test_pending_dismissals__app_only_has_no_ancs_after_reboot(void) {
+  prv_add_app(3);
+
+  prv_reboot();
+  cl_assert(!pending_dismissals_has_ancs());
 }

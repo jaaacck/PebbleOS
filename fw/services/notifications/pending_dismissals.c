@@ -14,6 +14,7 @@
 #include <pbl/services/timeline/attribute.h>
 #include <pbl/services/timeline/timeline.h>
 #include <pbl/util/size.h>
+#include <pbl/util/testing.h>
 #include <pbl/util/time.h>
 #include <pbl/util/units.h>
 #include <pbl/logging/logging.h>
@@ -60,6 +61,16 @@ typedef struct {
 
 static PBL_MUTEX_DEFINE(s_mutex);
 static bool s_send_to_app_scheduled;
+
+//! When the newest iOS dismissal was queued, 0 if none is. The reconnect catch-up runs on
+//! KernelMain, where opening the file can stall it: creating the file, or making room for it, can
+//! erase flash for long enough to fill KernelMain's event queue. So it checks this instead, and
+//! opens the file only when there is something to send.
+PBL_T_STATIC uint32_t s_ancs_queued_at;
+
+static bool prv_has_ancs(void) {
+  return (s_ancs_queued_at != 0) && (rtc_get_time() - (time_t)s_ancs_queued_at <= MAX_AGE_SECONDS);
+}
 
 static bool prv_load_entry(SettingsFile *file, SettingsRecordInfo *info, void *context) {
   PendingList *list = context;
@@ -172,10 +183,36 @@ bool pending_dismissals_add(const TimelineItem *notification, const TimelineItem
   const status_t status =
       settings_file_set(&file, &notification->header.id, sizeof(notification->header.id),
                         &dismissal, sizeof(dismissal));
+  if ((status == S_SUCCESS) && (dismissal.kind == PendingDismissalKindANCS)) {
+    s_ancs_queued_at = dismissal.queued_at;
+  }
   prv_close(&file);
 
   PBL_LOG_INFO("Phone unreachable, dismissal queued until it reconnects");
   return (status == S_SUCCESS);
+}
+
+// Creates the file if needed and finds the queued iOS dismissals, off KernelMain
+static void prv_init_system_task_cb(void *unused) {
+  SettingsFile file;
+  if (!prv_open(&file)) {
+    return;
+  }
+  PendingList *list = kernel_malloc_check(sizeof(PendingList));
+  prv_load(&file, list);
+  for (size_t i = 0; i < list->count; i++) {
+    const PendingDismissal *dismissal = &list->entries[i].dismissal;
+    if ((dismissal->kind == PendingDismissalKindANCS) &&
+        (dismissal->queued_at > s_ancs_queued_at)) {
+      s_ancs_queued_at = dismissal->queued_at;
+    }
+  }
+  kernel_free(list);
+  prv_close(&file);
+}
+
+void pending_dismissals_init(void) {
+  system_task_add_callback(prv_init_system_task_cb, NULL);
 }
 
 // Sends from the system task, like other Pebble app actions, and only removes what was sent
@@ -225,22 +262,7 @@ void pending_dismissals_send_to_app(void) {
 }
 
 bool pending_dismissals_has_ancs(void) {
-  SettingsFile file;
-  if (!prv_open(&file)) {
-    return false;
-  }
-  PendingList *list = kernel_malloc_check(sizeof(PendingList));
-  prv_load(&file, list);
-  bool found = false;
-  for (size_t i = 0; i < list->count; i++) {
-    if (list->entries[i].dismissal.kind == PendingDismissalKindANCS) {
-      found = true;
-      break;
-    }
-  }
-  kernel_free(list);
-  prv_close(&file);
-  return found;
+  return prv_has_ancs();
 }
 
 static bool prv_uid_in(uint32_t uid, const uint32_t *uids, size_t num_uids) {
@@ -254,6 +276,9 @@ static bool prv_uid_in(uint32_t uid, const uint32_t *uids, size_t num_uids) {
 
 bool pending_dismissals_find_ancs_canary(const uint32_t *uids, size_t num_uids,
                                          ANCSReconcileEntry *canary_out) {
+  if (!prv_has_ancs()) {
+    return false;
+  }
   SettingsFile file;
   if (!prv_open(&file)) {
     return false;
@@ -291,6 +316,9 @@ typedef struct {
 static void prv_resolve_ancs(bool (*match)(const PendingDismissal *dismissal, const void *context,
                                            uint32_t *uid_out),
                              const void *context, PendingDismissalSendCallback send) {
+  if (!prv_has_ancs()) {
+    return;
+  }
   SettingsFile file;
   if (!prv_open(&file)) {
     return;
@@ -312,6 +340,7 @@ static void prv_resolve_ancs(bool (*match)(const PendingDismissal *dismissal, co
     // Resolved either way: sent now, or iOS no longer has it
     settings_file_delete(&file, &entry->id, sizeof(entry->id));
   }
+  s_ancs_queued_at = 0;
   kernel_free(list);
   prv_close(&file);
 

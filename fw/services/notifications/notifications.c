@@ -81,6 +81,7 @@ static void prv_handle_comm_session_event(PebbleEvent *e, void *context) {
 
 void notifications_init(void) {
   notification_storage_init();
+  pending_dismissals_init();
 
   static EventServiceInfo s_comm_session_event_info = {
     .type = PEBBLE_COMM_SESSION_EVENT,
