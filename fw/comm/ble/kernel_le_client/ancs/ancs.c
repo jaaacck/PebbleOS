@@ -1258,8 +1258,7 @@ void ancs_handle_ios9_or_newer_detected(void) {
 void ancs_create(void) {
   PBL_ASSERTN(s_ancs_client == NULL);
   s_ancs_client = (ANCSClient *)kernel_zalloc_check(sizeof(ANCSClient));
-  pbl_buffer_init(&s_ancs_client->reassembly_ctx.buffer,
-                  sizeof(s_ancs_client->reassembly_ctx.buffer_storage));
+  pbl_buffer_init(&s_ancs_client->reassembly_ctx.buffer, NOTIFICATION_ATTRIBUTES_MAX_BUFFER_LENGTH);
   ancs_app_name_storage_init();
 }
 
