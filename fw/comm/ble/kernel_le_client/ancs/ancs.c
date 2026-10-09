@@ -10,6 +10,7 @@
 
 #include <string.h>
 
+#include <pbl/drivers/rtc.h>
 #include <pbl/kernel/compiler.h>
 #include <pbl/logging/logging.h>
 #include <pbl/services/evented_timer.h>
@@ -109,6 +110,8 @@ typedef struct ANCSClient {
   NotificationQueueNode *queue;
   bool alive_check_pending;
   ANCSVersion version;
+  //! When the current subscription started, 0 while not subscribed
+  time_t subscribed_since;
   // Alive-check intervals with no NS traffic; reset by any NS notification.
   // Triggers a CCCD re-subscribe at the threshold to recover silent NS.
   uint8_t alive_checks_without_ns;
@@ -966,6 +969,7 @@ void ancs_handle_subscribe(pbl_bt_characteristic_t subscribed_characteristic,
     PBL_LOG_INFO("ANCS subscribed: %u", characteristic_id);
 
     if (characteristic_id == ANCSCharacteristicData) {
+      s_ancs_client->subscribed_since = rtc_get_time();
       prv_ancs_is_alive_start_tracking();
       prv_start_temp_notification_connection_delay_timer();
     }
@@ -978,6 +982,7 @@ void ancs_invalidate_all_references(void) {
   for (int c = 0; c < NumANCSCharacteristic; c++) {
     s_ancs_client->characteristics[c] = PBL_BT_CHARACTERISTIC_INVALID;
   }
+  s_ancs_client->subscribed_since = 0;
 
   prv_reset_and_flush();
   prv_put_ancs_disconnected_event();
@@ -1226,6 +1231,10 @@ void prv_serialize_action_launcher_task_cb(void *data) {
   const PerformNotificationActionMsg *action_msg = (PerformNotificationActionMsg *)data;
   prv_serialize_action(action_msg);
   kernel_free(data);
+}
+
+time_t ancs_get_subscribed_since(void) {
+  return s_ancs_client ? s_ancs_client->subscribed_since : 0;
 }
 
 void ancs_perform_action(uint32_t notification_uid, uint8_t action_id) {
