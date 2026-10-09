@@ -57,6 +57,13 @@ bool comm_session_send_data(CommSession *session, uint16_t endpoint_id, const ui
   return true;
 }
 
+static int s_num_dismissals_queued;
+
+bool pending_dismissals_add(const TimelineItem *notification, const TimelineItemAction *dismiss) {
+  s_num_dismissals_queued++;
+  return true;
+}
+
 // Setup
 /////////////////////////
 void test_timeline_actions__initialize(void) {
@@ -64,6 +71,8 @@ void test_timeline_actions__initialize(void) {
   s_sent_action = false;
   s_sent_length = 0;
   s_window_state_supported = false;
+  s_app_disconnected = false;
+  s_num_dismissals_queued = 0;
 }
 
 void test_timeline_actions__cleanup(void) {
@@ -142,4 +151,35 @@ void test_timeline_actions__displayed_item_needs_phone_support(void) {
   s_expected_send_data = expected;
   timeline_action_endpoint_send_displayed_item(NULL);
   cl_assert(!s_sent_action);
+}
+
+// A notification from the phone, dismissed on the phone through the Pebble app
+static TimelineItemAction s_dismiss_action = {.id = 0, .type = TimelineItemActionTypeDismiss};
+
+static const TimelineItem s_phone_notification = {
+  .header = {.type = TimelineItemTypeNotification, .parent_id = UUID_NOTIFICATIONS_DATA_SOURCE},
+  .action_group = {.num_actions = 1, .actions = &s_dismiss_action},
+};
+
+// Without the Pebble app, Dismiss is queued for when it reconnects instead of failing
+void test_timeline_actions__dismiss_queued_while_disconnected(void) {
+  s_app_disconnected = true;
+  timeline_invoke_action(&s_phone_notification, &s_dismiss_action, NULL);
+  cl_assert_equal_i(s_num_dismissals_queued, 1);
+  cl_assert(!s_sent_action);
+}
+
+void test_timeline_actions__dismiss_sent_while_connected(void) {
+  timeline_invoke_action(&s_phone_notification, &s_dismiss_action, NULL);
+  cl_assert_equal_i(s_num_dismissals_queued, 0);
+}
+
+// Notifications only dismissed on the watch never reach the phone, so nothing is queued
+void test_timeline_actions__local_dismiss_not_queued(void) {
+  const TimelineItem local = {
+    .header = {.type = TimelineItemTypeNotification, .from_watch = true},
+  };
+  s_app_disconnected = true;
+  timeline_invoke_action(&local, &s_dismiss_action, NULL);
+  cl_assert_equal_i(s_num_dismissals_queued, 0);
 }

@@ -64,6 +64,19 @@ const ANCSAppMetadata *ancs_notifications_util_get_app_metadata(const ANCSAttrib
 time_t ancs_notifications_util_parse_timestamp(const ANCSAttribute *timestamp_attr);
 
 /**
+ * @brief Hash an iOS app identifier, to match notifications from the same app.
+ *
+ * Only the start of the identifier is used: the watch stores long identifiers truncated, and
+ * reverse-DNS identifiers are distinct well before that. A collision only makes two apps'
+ * notifications look alike.
+ *
+ * @param app_id Identifier bytes.
+ * @param length Number of bytes.
+ * @return Hash of the identifier.
+ */
+uint32_t ancs_notifications_util_hash_app_id(const uint8_t *app_id, size_t length);
+
+/**
  * @brief Check whether an app identifier is the iOS Phone app.
  *
  * @param app_id App identifier attribute, may be NULL.

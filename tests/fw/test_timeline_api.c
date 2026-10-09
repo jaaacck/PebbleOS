@@ -36,6 +36,7 @@
 #include <stubs_passert.h>
 #include <stubs_pbl_malloc.h>
 #include <stubs_pebble_tasks.h>
+#include <stubs_pending_dismissals.h>
 #include <stubs_rand_ptr.h>
 #include <stubs_regular_timer.h>
 #include <stubs_session.h>

@@ -32,6 +32,7 @@
 #include <stubs_notification_storage.h>
 #include <stubs_notifications.h>
 #include <stubs_passert.h>
+#include <stubs_pending_dismissals.h>
 #include <stubs_phone_call_util.h>
 #include <stubs_rand_ptr.h>
 #include <stubs_regular_timer.h>

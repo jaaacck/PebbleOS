@@ -56,6 +56,7 @@
 #include <stubs_pbl_malloc.h>
 #include <stubs_pebble_process_info.h>
 #include <stubs_pebble_tasks.h>
+#include <stubs_pending_dismissals.h>
 #include <stubs_phone_call_util.h>
 #include <stubs_process_manager.h>
 #include <stubs_property_animation.h>
