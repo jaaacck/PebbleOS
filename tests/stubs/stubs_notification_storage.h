@@ -30,6 +30,9 @@ bool PBL_WEAK notification_storage_get(const Uuid *id, TimelineItem *item_out) {
   return false;
 }
 
+void PBL_WEAK notification_storage_reset_and_init(void) {
+}
+
 void PBL_WEAK notification_storage_set_status(const Uuid *id, uint8_t status) {
 }
 
