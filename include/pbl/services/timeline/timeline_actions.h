@@ -116,6 +116,14 @@ void timeline_actions_dismiss_all(NotificationInfo *notif_list, int num_notifica
                                   void *dismiss_all_cb_data);
 
 /**
+ * @brief Clear the notification history, dismissing its notifications on the phone first.
+ *
+ * Works like timeline_actions_dismiss_all() on every notification not yet dismissed or acted on,
+ * without showing results, then clears the history. Runs on KernelMain.
+ */
+void timeline_actions_clear_history(void);
+
+/**
  * @brief Invoke an action without an action menu.
  *
  * @param action Action to perform.

@@ -1158,6 +1158,8 @@ typedef struct {
   int next;
   bool performed_actions;
   bool ancs_bulk_mode;
+  //! Clear the notification history once every notification is dismissed
+  bool clear_history;
   NotificationInfo notif_list[];
 } DismissAllContext;
 
@@ -1182,10 +1184,14 @@ static void prv_dismiss_all_step(void *context) {
   DismissAllContext *ctx = context;
 
   if (ctx->next == ctx->num_notifications) {
-    if (!ctx->performed_actions) {
+    if (ctx->data && !ctx->performed_actions) {
       PBL_LOG_DBG("Didn't take any actions, cleaning up");
       const bool success = false;
       prv_cleanup_action_result(ctx->data, success);
+    }
+    if (ctx->clear_history) {
+      // Only now, as each dismissal reads its notification from storage
+      notification_storage_reset_and_init();
     }
     kernel_free(ctx);
     return;
@@ -1211,6 +1217,60 @@ static void prv_dismiss_all_step(void *context) {
   }
 
   launcher_task_add_callback(prv_dismiss_all_step, ctx);
+}
+
+// Notifications the phone may still show: not yet dismissed or acted on
+static bool prv_is_active_notification(const SerializedTimelineItemHeader *header) {
+  return (header->common.type == TimelineItemTypeNotification) &&
+         !(header->common.status & (TimelineItemStatusDismissed | TimelineItemStatusActioned));
+}
+
+static bool prv_count_active_notification(void *data, SerializedTimelineItemHeader *header) {
+  if (prv_is_active_notification(header)) {
+    (*(int *)data)++;
+  }
+  return true;
+}
+
+typedef struct {
+  DismissAllContext *ctx;
+  int capacity;
+} ActiveNotificationList;
+
+static bool prv_add_active_notification(void *data, SerializedTimelineItemHeader *header) {
+  ActiveNotificationList *list = data;
+  if (prv_is_active_notification(header)) {
+    list->ctx->notif_list[list->ctx->num_notifications++] = (NotificationInfo){
+      .type = NotificationMobile,
+      .id = header->common.id,
+    };
+  }
+  return (list->ctx->num_notifications < list->capacity);
+}
+
+static void prv_clear_history_launcher_task_cb(void *unused) {
+  int count = 0;
+  notification_storage_iterate(prv_count_active_notification, &count);
+
+  DismissAllContext *ctx =
+      kernel_malloc_check(sizeof(DismissAllContext) + count * sizeof(NotificationInfo));
+  // Nothing is shown for each dismissal, the history is going away
+  *ctx = (DismissAllContext){
+    .ancs_bulk_mode = true,
+    .clear_history = true,
+  };
+  if (count > 0) {
+    ActiveNotificationList list = {.ctx = ctx, .capacity = count};
+    notification_storage_iterate(prv_add_active_notification, &list);
+  }
+
+  PBL_LOG_INFO("Clearing the notification history, dismissing %d on the phone",
+               ctx->num_notifications);
+  prv_dismiss_all_step(ctx);
+}
+
+void timeline_actions_clear_history(void) {
+  launcher_task_add_callback(prv_clear_history_launcher_task_cb, NULL);
 }
 
 void timeline_actions_dismiss_all(NotificationInfo *notif_list, int num_notifications,

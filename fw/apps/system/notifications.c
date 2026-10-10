@@ -443,12 +443,8 @@ static void prv_dialog_unloaded(void *context) {
 
 static void prv_confirmed_handler(ClickRecognizerRef recognizer, void *context) {
   NotificationsData *data = context;
-  notification_storage_reset_and_init();
-  prv_loaded_notification_list_deinit(data->loaded_notification_list);
-  data->loaded_notification_list = NULL;
-  notifications_history_deinit(&data->history);
-  prv_notifications_history_init(data);
-  prv_load_notification_storage(data);
+  // Dismissed on the phone too, then cleared, as the app exits
+  timeline_actions_clear_history();
   actionable_dialog_pop(data->actionable_dialog);
 
   // Create and display DONE dialog

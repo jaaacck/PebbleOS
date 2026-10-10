@@ -17,6 +17,14 @@
 ///////////////////////////////////////////////////////////
 #include "stubs_common.h"
 
+#include <stubs_notification_storage.h>
+
+void launcher_task_add_callback(void (*callback)(void *data), void *data) {
+}
+
+void ancs_perform_action(uint32_t notification_uid, uint8_t action_id) {
+}
+
 #include <stubs_blob_db_sync_util.h>
 #include <stubs_codepoint.h>
 #include <stubs_nexmo.h>

@@ -36,7 +36,6 @@
 #include <stubs_logging.h>
 #include <stubs_modal_manager.h>
 #include <stubs_mutex.h>
-#include <stubs_notification_storage.h>
 #include <stubs_notifications.h>
 #include <stubs_passert.h>
 #include <stubs_pbl_malloc.h>
@@ -58,13 +57,7 @@ PebblePhoneCaller *phone_call_util_create_caller(const char *number, const char 
   return NULL;
 }
 
-void launcher_task_add_callback(void (*callback)(void *data), void *data) {
-}
-
 void system_task_add_callback(void (*callback)(void *data), void *data) {
-}
-
-void ancs_perform_action(uint32_t notification_uid, uint8_t action_id) {
 }
 
 status_t blob_db_delete(BlobDBId db_id, const uint8_t *key, int key_len) {
